@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type {
   AuthResult,
   LoginCredentials,
+  SignupResult,
   SignupCredentials,
 } from "@/features/auth/model/auth.types";
 
@@ -25,8 +26,8 @@ export async function signInWithEmail(
 
 export async function signUpWithEmail(
   credentials: SignupCredentials
-): Promise<AuthResult> {
-  const { error } = await supabase.auth.signUp({
+): Promise<SignupResult> {
+  const { data, error } = await supabase.auth.signUp({
     email: credentials.email,
     password: credentials.password,
   });
@@ -38,7 +39,10 @@ export async function signUpWithEmail(
     };
   }
 
-  return { ok: true };
+  return {
+    ok: true,
+    requiresEmailVerification: !data.session,
+  };
 }
 
 export async function requestPasswordReset(
