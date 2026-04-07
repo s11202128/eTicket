@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { fetchDashboardSnapshot } from "@/features/dashboard/model/dashboard.repository";
+import { hasActiveSession } from "@/features/auth/model/session.repository";
 import type { DashboardSnapshot, DashboardStat } from "@/features/dashboard/model/dashboard.types";
 
 type DashboardViewModel = {
@@ -20,6 +22,7 @@ const EMPTY_SNAPSHOT: DashboardSnapshot = {
 };
 
 export function useDashboardViewModel(): DashboardViewModel {
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState<DashboardSnapshot>(EMPTY_SNAPSHOT);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +32,12 @@ export function useDashboardViewModel(): DashboardViewModel {
 
     const loadDashboard = async () => {
       try {
+        const isAuthenticated = await hasActiveSession();
+        if (!isAuthenticated) {
+          router.replace("/login");
+          return;
+        }
+
         const data = await fetchDashboardSnapshot();
         if (isMounted) {
           setSnapshot(data);
@@ -50,7 +59,7 @@ export function useDashboardViewModel(): DashboardViewModel {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   const lastUpdated = useMemo(() => {
     if (!snapshot.updatedAt) return "";
