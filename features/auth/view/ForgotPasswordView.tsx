@@ -1,32 +1,30 @@
 import Link from "next/link";
 import styles from "@/features/auth/view/AuthCard.module.css";
 
-type LoginViewProps = {
+type ForgotPasswordViewProps = {
   email: string;
-  password: string;
   isSubmitting: boolean;
   error: string | null;
+  successMessage: string | null;
   isFormValid: boolean;
   onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
   onSubmit: () => Promise<void>;
 };
 
-export function LoginView({
+export function ForgotPasswordView({
   email,
-  password,
   isSubmitting,
   error,
+  successMessage,
   isFormValid,
   onEmailChange,
-  onPasswordChange,
   onSubmit,
-}: LoginViewProps) {
+}: ForgotPasswordViewProps) {
   return (
     <main className={styles.page}>
       <section className={styles.card}>
         <div className={styles.left}>
-          <h1 className={styles.title}>Welcome</h1>
+          <h1 className={styles.title}>Reset Password</h1>
 
           <form
             className={styles.form}
@@ -37,7 +35,7 @@ export function LoginView({
           >
             <input
               className={styles.input}
-              id="email"
+              id="reset-email"
               type="email"
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
@@ -45,32 +43,19 @@ export function LoginView({
               autoComplete="email"
             />
 
-            <input
-              className={styles.input}
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-              placeholder="Password"
-              autoComplete="current-password"
-            />
-
-            <Link className={styles.forgot} href="/forgot-password">
-              Forgot password?
-            </Link>
-
             <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
+              {isSubmitting ? "SENDING..." : "SEND RESET LINK"}
             </button>
           </form>
 
           {error ? <p className={styles.error}>{error}</p> : null}
+          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
         </div>
 
         <aside className={styles.right}>
-          <p className={styles.panelText}>Don&apos;t have an account? Please Sign up!</p>
-          <Link className={styles.outlineButton} href="/signup">
-            SIGN UP
+          <p className={styles.panelText}>Remembered your password? Go back and sign in.</p>
+          <Link className={styles.outlineButton} href="/login">
+            SIGN IN
           </Link>
         </aside>
       </section>

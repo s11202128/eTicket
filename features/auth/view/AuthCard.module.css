@@ -107,6 +107,12 @@
   font-size: 0.9rem;
 }
 
+.success {
+  margin-top: 12px;
+  color: #2f7d32;
+  font-size: 0.9rem;
+}
+
 .panelText {
   margin: 0 0 22px;
   line-height: 1.6;
