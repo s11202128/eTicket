@@ -72,8 +72,13 @@ export function SignupView({
             </button>
           </form>
 
+          <p className={styles.helperText}>Already signed up? Login here.</p>
+          <Link className={styles.inlineLinkButton} href="/login">
+            LOGIN
+          </Link>
+
           {error ? <p className={styles.error}>{error}</p> : null}
-          {successMessage ? <p>{successMessage}</p> : null}
+          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
         </div>
 
         <aside className={styles.right}>

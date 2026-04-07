@@ -113,6 +113,31 @@
   font-size: 0.9rem;
 }
 
+.helperText {
+  margin: 14px 0 6px;
+  color: #5f5f5f;
+  font-size: 0.9rem;
+}
+
+.inlineLinkButton {
+  align-self: flex-start;
+  border: 1px solid #b8b8b8;
+  border-radius: 999px;
+  color: #3a3a3a;
+  text-decoration: none;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.inlineLinkButton:hover {
+  background: #3f3f3f;
+  color: #ffffff;
+  border-color: #3f3f3f;
+}
+
 .panelText {
   margin: 0 0 22px;
   line-height: 1.6;

@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { signUpWithEmail } from "@/features/auth/model/auth.repository";
 import type { SignupCredentials } from "@/features/auth/model/auth.types";
 
@@ -20,13 +19,21 @@ type SignupViewModel = {
 };
 
 export function useSignupViewModel(): SignupViewModel {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefilledEmail = params.get("email")?.trim() ?? "";
+    if (prefilledEmail && !email) {
+      setEmail(prefilledEmail);
+      setError("Email is not verified yet. Please complete signup verification.");
+    }
+  }, [email]);
 
   const isFormValid = useMemo(() => {
     return (
@@ -61,9 +68,14 @@ export function useSignupViewModel(): SignupViewModel {
         return;
       }
 
-      setSuccessMessage("Account created. Check your email to verify your account.");
-      router.push("/login");
-      router.refresh();
+      if (result.requiresEmailVerification) {
+        setSuccessMessage(
+          "Account created. Check your email to verify your account before signing in."
+        );
+        return;
+      }
+
+      setSuccessMessage("Account created successfully. You can sign in now.");
     } catch {
       setError("Signup failed. Please try again.");
     } finally {

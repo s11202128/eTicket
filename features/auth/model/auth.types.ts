@@ -12,3 +12,7 @@ export type AuthResult = {
   ok: boolean;
   errorMessage?: string;
 };
+
+export type SignupResult = AuthResult & {
+  requiresEmailVerification?: boolean;
+};

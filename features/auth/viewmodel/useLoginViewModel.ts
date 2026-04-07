@@ -42,7 +42,26 @@ export function useLoginViewModel(): LoginViewModel {
       const result = await signInWithEmail(credentials);
 
       if (!result.ok) {
-        setError(result.errorMessage ?? "Login failed. Please try again.");
+        const rawMessage = result.errorMessage ?? "Login failed. Please try again.";
+        const normalizedMessage = rawMessage.toLowerCase();
+        const isUnverifiedEmail =
+          normalizedMessage.includes("email not confirmed") ||
+          normalizedMessage.includes("email not verified");
+
+        if (isUnverifiedEmail) {
+          setError("Email is not verified. Please go to signup and verify first.");
+          router.push(`/signup?email=${encodeURIComponent(email.trim())}`);
+          return;
+        }
+
+        const isGenericCredentialError =
+          normalizedMessage === "invalid login credentials";
+
+        setError(
+          isGenericCredentialError
+            ? "Invalid login credentials. If you just signed up, verify your email first."
+            : rawMessage
+        );
         return;
       }
 
