@@ -3,22 +3,51 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchDashboardSnapshot } from "@/features/dashboard/model/dashboard.repository";
-import { hasActiveSession } from "@/features/auth/model/session.repository";
-import type { DashboardSnapshot, DashboardStat } from "@/features/dashboard/model/dashboard.types";
+import {
+  getCurrentUserProfile,
+  hasActiveSession,
+} from "@/features/auth/model/session.repository";
+import type {
+  DashboardSnapshot,
+  DashboardStat,
+  NextEvent,
+  RecentTicket,
+  SidebarItem,
+  UpcomingEvent,
+} from "@/features/dashboard/model/dashboard.types";
 
 type DashboardViewModel = {
   isLoading: boolean;
   error: string | null;
-  title: string;
+  appName: string;
+  userName: string;
+  userAvatar: string;
+  notifications: number;
+  sidebarItems: SidebarItem[];
   lastUpdated: string;
   stats: DashboardStat[];
-  statusMessage: string;
+  nextEvent: NextEvent | null;
+  recentTickets: RecentTicket[];
+  upcomingEvents: UpcomingEvent[];
 };
 
 const EMPTY_SNAPSHOT: DashboardSnapshot = {
-  title: "Dashboard",
+  appName: "E-Ticket",
+  userName: "",
+  userAvatar: "",
+  notifications: 0,
+  sidebarItems: [],
   updatedAt: "",
   stats: [],
+  nextEvent: {
+    title: "",
+    dateTime: "",
+    location: "",
+    imageUrl: "",
+    ctaLabel: "View Details",
+  },
+  recentTickets: [],
+  upcomingEvents: [],
 };
 
 export function useDashboardViewModel(): DashboardViewModel {
@@ -39,8 +68,14 @@ export function useDashboardViewModel(): DashboardViewModel {
         }
 
         const data = await fetchDashboardSnapshot();
+        const profile = await getCurrentUserProfile();
+
         if (isMounted) {
-          setSnapshot(data);
+          setSnapshot({
+            ...data,
+            userName: profile?.displayName || data.userName,
+            userAvatar: profile?.avatarUrl || data.userAvatar,
+          });
           setError(null);
         }
       } catch {
@@ -66,17 +101,18 @@ export function useDashboardViewModel(): DashboardViewModel {
     return new Date(snapshot.updatedAt).toLocaleString();
   }, [snapshot.updatedAt]);
 
-  const statusMessage = useMemo(() => {
-    const hasIncident = snapshot.stats.some((stat) => stat.trend === "down");
-    return hasIncident ? "Monitor refund trends closely." : "Operations are stable today.";
-  }, [snapshot.stats]);
-
   return {
     isLoading,
     error,
-    title: snapshot.title,
+    appName: snapshot.appName,
+    userName: snapshot.userName,
+    userAvatar: snapshot.userAvatar,
+    notifications: snapshot.notifications,
+    sidebarItems: snapshot.sidebarItems,
     lastUpdated,
     stats: snapshot.stats,
-    statusMessage,
+    nextEvent: snapshot.nextEvent,
+    recentTickets: snapshot.recentTickets,
+    upcomingEvents: snapshot.upcomingEvents,
   };
 }

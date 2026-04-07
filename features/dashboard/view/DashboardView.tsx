@@ -1,54 +1,103 @@
-import type { DashboardStat } from "@/features/dashboard/model/dashboard.types";
+import type {
+  DashboardStat,
+  NextEvent,
+  RecentTicket,
+  SidebarItem,
+  UpcomingEvent,
+} from "@/features/dashboard/model/dashboard.types";
+import { Sidebar } from "@/features/dashboard/view/components/layout/Sidebar";
+import { Topbar } from "@/features/dashboard/view/components/layout/Topbar";
+import { WelcomeBanner } from "@/features/dashboard/view/components/dashboard/WelcomeBanner";
+import { StatCard } from "@/features/dashboard/view/components/dashboard/StatCard";
+import { NextEventCard } from "@/features/dashboard/view/components/dashboard/NextEventCard";
+import { TicketCard } from "@/features/dashboard/view/components/tickets/TicketCard";
+import { EventCard } from "@/features/dashboard/view/components/events/EventCard";
+import styles from "@/features/dashboard/view/DashboardView.module.css";
 
 type DashboardViewProps = {
-  title: string;
+  appName: string;
+  userName: string;
+  userAvatar: string;
+  notifications: number;
+  sidebarItems: SidebarItem[];
   lastUpdated: string;
   stats: DashboardStat[];
-  statusMessage: string;
+  nextEvent: NextEvent | null;
+  recentTickets: RecentTicket[];
+  upcomingEvents: UpcomingEvent[];
   isLoading: boolean;
   error: string | null;
 };
 
 export function DashboardView({
-  title,
+  appName,
+  userName,
+  userAvatar,
+  notifications,
+  sidebarItems,
   lastUpdated,
   stats,
-  statusMessage,
+  nextEvent,
+  recentTickets,
+  upcomingEvents,
   isLoading,
   error,
 }: DashboardViewProps) {
+  if (isLoading) {
+    return (
+      <main className={styles.page}>
+        <p className={styles.stateText}>Loading dashboard...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className={styles.page}>
+        <p className={styles.stateText}>{error}</p>
+      </main>
+    );
+  }
+
   return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
-      <h1>{title}</h1>
-      {lastUpdated ? <p>Last updated: {lastUpdated}</p> : null}
+    <main className={styles.page}>
+      <div className={styles.layout}>
+        <Sidebar appName={appName} items={sidebarItems} />
 
-      {isLoading ? <p>Loading dashboard...</p> : null}
-      {error ? <p>{error}</p> : null}
+        <div className={styles.contentArea}>
+          <Topbar notifications={notifications} avatarUrl={userAvatar} />
 
-      {!isLoading && !error ? (
-        <>
-          <p>{statusMessage}</p>
-          <section
-            style={{
-              display: "grid",
-              gap: "0.75rem",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              marginTop: "1rem",
-            }}
-          >
-            {stats.map((stat) => (
-              <article
-                key={stat.label}
-                style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "1rem" }}
-              >
-                <h2 style={{ margin: 0, fontSize: "1rem" }}>{stat.label}</h2>
-                <p style={{ fontSize: "1.5rem", margin: "0.5rem 0 0" }}>{stat.value}</p>
-                <p style={{ margin: "0.25rem 0 0", textTransform: "capitalize" }}>Trend: {stat.trend}</p>
-              </article>
-            ))}
-          </section>
-        </>
-      ) : null}
+          <div className={styles.main}>
+            <WelcomeBanner userName={userName} updatedAt={lastUpdated} />
+
+            <section className={styles.statsGrid}>
+              {stats.map((stat) => (
+                <StatCard key={stat.id} stat={stat} />
+              ))}
+            </section>
+
+            {nextEvent ? <NextEventCard event={nextEvent} /> : null}
+
+            <section>
+              <h2 className={styles.sectionTitle}>Recent Tickets</h2>
+              <div className={styles.ticketGrid}>
+                {recentTickets.map((ticket) => (
+                  <TicketCard key={ticket.id} ticket={ticket} />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className={styles.sectionTitle}>Upcoming Events</h2>
+              <div className={styles.eventGrid}>
+                {upcomingEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
