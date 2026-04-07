@@ -32,14 +32,21 @@ export async function getCurrentUserProfile(): Promise<AuthUserProfile | null> {
     return null;
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", data.user.id)
+    .single();
+
   const metadata = data.user.user_metadata ?? {};
   const rawName =
+    profile?.full_name ??
     metadata.full_name ??
     metadata.name ??
     (data.user.email ? data.user.email.split("@")[0] : "User");
 
   const displayName = normalizeDisplayName(String(rawName || "User"));
-  const avatarUrl = metadata.avatar_url ? String(metadata.avatar_url) : null;
+  const avatarUrl = profile?.avatar_url ?? (metadata.avatar_url ? String(metadata.avatar_url) : null);
 
   return {
     displayName,
