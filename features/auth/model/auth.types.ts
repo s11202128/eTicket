@@ -3,7 +3,12 @@ export type LoginCredentials = {
   password: string;
 };
 
-export type LoginResult = {
+export type SignupCredentials = {
+  email: string;
+  password: string;
+};
+
+export type AuthResult = {
   ok: boolean;
   errorMessage?: string;
 };

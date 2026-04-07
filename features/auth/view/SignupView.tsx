@@ -1,33 +1,38 @@
 import Link from "next/link";
 import styles from "@/features/auth/view/AuthCard.module.css";
 
-type LoginViewProps = {
+type SignupViewProps = {
   email: string;
   password: string;
+  confirmPassword: string;
   isSubmitting: boolean;
   error: string | null;
+  successMessage: string | null;
   isFormValid: boolean;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange: (value: string) => void;
   onSubmit: () => Promise<void>;
 };
 
-export function LoginView({
+export function SignupView({
   email,
   password,
+  confirmPassword,
   isSubmitting,
   error,
+  successMessage,
   isFormValid,
   onEmailChange,
   onPasswordChange,
+  onConfirmPasswordChange,
   onSubmit,
-}: LoginViewProps) {
+}: SignupViewProps) {
   return (
     <main className={styles.page}>
       <section className={styles.card}>
         <div className={styles.left}>
-          <h1 className={styles.title}>Welcome</h1>
-
+          <h1 className={styles.title}>Create Account</h1>
           <form
             className={styles.form}
             onSubmit={(event) => {
@@ -37,40 +42,44 @@ export function LoginView({
           >
             <input
               className={styles.input}
-              id="email"
+              id="signup-email"
               type="email"
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
               placeholder="Email"
               autoComplete="email"
             />
-
             <input
               className={styles.input}
-              id="password"
+              id="signup-password"
               type="password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
               placeholder="Password"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
-
-            <Link className={styles.forgot} href="/login">
-              Forgot password?
-            </Link>
-
+            <input
+              className={styles.input}
+              id="signup-confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => onConfirmPasswordChange(event.target.value)}
+              placeholder="Confirm Password"
+              autoComplete="new-password"
+            />
             <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
+              {isSubmitting ? "CREATING..." : "SIGN UP"}
             </button>
           </form>
 
           {error ? <p className={styles.error}>{error}</p> : null}
+          {successMessage ? <p>{successMessage}</p> : null}
         </div>
 
         <aside className={styles.right}>
-          <p className={styles.panelText}>Don&apos;t have an account? Please Sign up!</p>
-          <Link className={styles.outlineButton} href="/signup">
-            SIGN UP
+          <p className={styles.panelText}>Already have an account? Please Sign in!</p>
+          <Link className={styles.outlineButton} href="/login">
+            SIGN IN
           </Link>
         </aside>
       </section>

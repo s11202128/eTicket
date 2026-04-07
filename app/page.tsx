@@ -9,6 +9,9 @@ export default function HomePage() {
         <Link href="/login">Go to Login</Link>
       </p>
       <p>
+        <Link href="/signup">Go to Sign Up</Link>
+      </p>
+      <p>
         <Link href="/dashboard">Go to Dashboard</Link>
       </p>
     </main>
