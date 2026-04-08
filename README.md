@@ -3,7 +3,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ## Getting Started
 
 First, run the development server:
-Supabase password: SzwhimFI0K3RyP1d
+
 
 ```bash
 npm run dev
