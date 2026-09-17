@@ -11,6 +11,7 @@ function StatIcon({ icon }: { icon: DashboardStat["icon"] }) {
     ticket: "▱",
     event: "◇",
     profile: "○",
+    admin: "⌘",
     logout: "↗",
   };
 

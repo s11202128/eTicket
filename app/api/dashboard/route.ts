@@ -1,5 +1,4 @@
-import { demoEvents } from "@/lib/demo-data";
-import { getDemoState } from "@/lib/server/demo-store";
+import { getDemoState, toPublicDemoEvent } from "@/lib/server/demo-store";
 import { authenticateRequest, jsonError } from "@/lib/server/api";
 
 export async function GET(request: Request) {
@@ -10,7 +9,9 @@ export async function GET(request: Request) {
     const demoState = getDemoState();
     return Response.json({
       profile: demoState.profile,
-      events: demoEvents,
+      events: demoState.events
+        .filter((event) => event.published && new Date(event.startsAt) >= new Date())
+        .map(toPublicDemoEvent),
       tickets: demoState.tickets,
       updatedAt: new Date().toISOString(),
     });
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
 
   const client = auth.client!;
   const [profileResult, eventsResult, ticketsResult] = await Promise.all([
-    client.from("profiles").select("full_name,email,phone,avatar_url").eq("id", auth.user.id).maybeSingle(),
+    client.from("profiles").select("full_name,email,phone,avatar_url,role").eq("id", auth.user.id).maybeSingle(),
     client
       .from("events")
       .select("id,title,description,category,venue,location,starts_at,image_url,price_cents,currency,capacity,tickets_sold,featured")
@@ -78,6 +79,7 @@ export async function GET(request: Request) {
       email: profileResult.data?.email || auth.user.email || "",
       phone: profileResult.data?.phone || "",
       avatarUrl: profileResult.data?.avatar_url || null,
+      role: profileResult.data?.role === "admin" ? "admin" : "customer",
     },
     events,
     tickets,

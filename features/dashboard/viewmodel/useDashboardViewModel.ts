@@ -23,6 +23,7 @@ const EMPTY_PROFILE: UserProfile = {
   email: "",
   phone: "",
   avatarUrl: null,
+  role: "customer",
 };
 
 export function useDashboardViewModel(activeView: DashboardViewName) {
@@ -63,6 +64,9 @@ export function useDashboardViewModel(activeView: DashboardViewName) {
     { id: "events", label: "Discover events", href: "/events", icon: "event" },
     { id: "tickets", label: "My tickets", href: "/tickets", icon: "ticket" },
     { id: "profile", label: "Profile", href: "/profile", icon: "profile" },
+    ...(snapshot.profile.role === "admin"
+      ? [{ id: "admin" as const, label: "System manager", href: "/admin", icon: "admin" as const }]
+      : []),
     { id: "logout", label: "Sign out", href: "/login", icon: "logout" },
   ];
 

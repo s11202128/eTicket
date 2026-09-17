@@ -7,6 +7,8 @@ A Solomon Islands–based, full-stack event discovery and digital ticketing appl
 - Public event discovery landing page
 - Supabase email authentication and password recovery
 - Authenticated overview, event catalogue, ticket wallet, and profile
+- Role-protected event management command centre at `/admin`
+- Event creation, editing, publishing, capacity monitoring, and safe deletion
 - Next.js API layer with bearer-token validation
 - Atomic ticket booking with capacity checks
 - Row-level security for profiles and tickets
@@ -39,7 +41,17 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Run the SQL files in `supabase/migrations/` in filename order. The second migration creates the event catalogue, ticket wallet, seed events, security policies, and the atomic `book_event_ticket` database function.
+Run the SQL files in `supabase/migrations/` in filename order. They create the event catalogue, ticket wallet, seed events, security policies, atomic booking, multi-currency support, and administrator controls.
+
+After signing up the account that will manage the platform, promote it once from the Supabase SQL editor. Replace the email with the account you created:
+
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'you@example.com';
+```
+
+Sign in again and open `/admin`. Customers cannot promote themselves: the database protects role changes and all management operations with row-level security. In demo mode, any signed-in demo account can inspect the complete management workflow.
 
 The browser uses Supabase only for authentication. All application data flows through `/api/events`, `/api/dashboard`, `/api/tickets`, and `/api/profile`; authenticated requests pass the current access token and remain subject to Supabase row-level security.
 

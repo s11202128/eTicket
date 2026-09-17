@@ -1,9 +1,9 @@
 export type DashboardViewName = "dashboard" | "events" | "tickets" | "profile";
 
-export type IconName = "dashboard" | "ticket" | "event" | "profile" | "logout";
+export type IconName = "dashboard" | "ticket" | "event" | "profile" | "admin" | "logout";
 
 export type SidebarItem = {
-  id: DashboardViewName | "logout";
+  id: DashboardViewName | "admin" | "logout";
   label: string;
   href: string;
   icon: IconName;
@@ -48,6 +48,7 @@ export type UserProfile = {
   email: string;
   phone: string;
   avatarUrl: string | null;
+  role: "customer" | "admin";
 };
 
 export type DashboardSnapshot = {

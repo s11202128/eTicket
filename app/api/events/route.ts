@@ -1,8 +1,14 @@
-import { demoEvents } from "@/lib/demo-data";
 import { createServerClient, isServerDemoMode, jsonError } from "@/lib/server/api";
+import { getDemoState, toPublicDemoEvent } from "@/lib/server/demo-store";
 
 export async function GET() {
-  if (isServerDemoMode()) return Response.json({ events: demoEvents });
+  if (isServerDemoMode()) {
+    const events = getDemoState().events
+      .filter((event) => event.published && new Date(event.startsAt) >= new Date())
+      .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
+      .map(toPublicDemoEvent);
+    return Response.json({ events });
+  }
 
   const client = createServerClient();
   if (!client) return jsonError("The database is not configured.", 503);

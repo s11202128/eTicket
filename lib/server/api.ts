@@ -53,3 +53,20 @@ export async function authenticateRequest(
 
   return { client, user: data.user, demo: false };
 }
+
+export async function authenticateAdminRequest(
+  request: Request,
+): Promise<AuthenticatedRequest | Response> {
+  const auth = await authenticateRequest(request);
+  if (auth instanceof Response || auth.demo) return auth;
+
+  const { data, error } = await auth.client!
+    .from("profiles")
+    .select("role")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+
+  if (error) return jsonError("Unable to verify administrator access.", 500);
+  if (data?.role !== "admin") return jsonError("Administrator access is required.", 403);
+  return auth;
+}

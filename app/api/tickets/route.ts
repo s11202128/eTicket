@@ -1,4 +1,3 @@
-import { demoEvents } from "@/lib/demo-data";
 import { authenticateRequest, jsonError } from "@/lib/server/api";
 import { getDemoState } from "@/lib/server/demo-store";
 
@@ -20,8 +19,9 @@ export async function POST(request: Request) {
   }
 
   if (auth.demo) {
-    const event = demoEvents.find((item) => item.id === eventId);
+    const event = getDemoState().events.find((item) => item.id === eventId && item.published);
     if (!event) return jsonError("Event not found.", 404);
+    if (event.remainingTickets < quantity) return jsonError("There are not enough tickets remaining.", 409);
     const reference = `ET-${Date.now().toString(36).toUpperCase()}`;
     const ticket = {
       id: `demo-${Date.now()}`,
@@ -38,7 +38,11 @@ export async function POST(request: Request) {
       bookingReference: reference,
       qrData: reference,
     };
-    getDemoState().tickets.unshift(ticket);
+    const demoState = getDemoState();
+    demoState.tickets.unshift(ticket);
+    event.ticketsSold += quantity;
+    event.remainingTickets -= quantity;
+    event.updatedAt = new Date().toISOString();
     return Response.json(
       { ticket },
       { status: 201 },

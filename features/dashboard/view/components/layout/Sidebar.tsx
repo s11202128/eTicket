@@ -15,6 +15,7 @@ function Icon({ name }: { name: IconName }) {
     ticket: "▱",
     event: "◇",
     profile: "○",
+    admin: "⌘",
     logout: "↗",
   };
 
