@@ -8,7 +8,7 @@ export const demoEvents: Event[] = [
     category: "Festival",
     venue: "Heritage Park",
     location: "Honiara, Solomon Islands",
-    startsAt: "2026-10-03T19:30:00.000Z",
+    startsAt: "2026-10-03T08:30:00.000Z",
     imageUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1400&q=85",
     priceCents: 25000,
     currency: "SBD",

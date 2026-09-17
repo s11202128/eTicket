@@ -15,6 +15,10 @@ import { StatCard } from "@/features/dashboard/view/components/dashboard/StatCar
 import { NextEventCard } from "@/features/dashboard/view/components/dashboard/NextEventCard";
 import { TicketCard } from "@/features/dashboard/view/components/tickets/TicketCard";
 import { EventCard } from "@/features/dashboard/view/components/events/EventCard";
+import {
+  matchesEventHorizon,
+  type EventHorizon,
+} from "@/features/dashboard/model/event-discovery";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
 
 type DashboardViewProps = {
@@ -35,7 +39,6 @@ type DashboardViewProps = {
   onLogout: () => Promise<void>;
 };
 
-type EventHorizon = "all" | "solomon" | "pacific" | "world";
 type EventDateWindow = "all" | "30" | "90";
 type EventSort = "soonest" | "name" | "availability";
 
@@ -46,42 +49,12 @@ type EventFilters = {
   horizon: EventHorizon;
 };
 
-const PACIFIC_LOCATION_MARKERS = [
-  "solomon islands",
-  "fiji",
-  "new zealand",
-  "papua new guinea",
-  "vanuatu",
-  "samoa",
-  "tonga",
-  "kiribati",
-  "tuvalu",
-  "nauru",
-  "palau",
-  "micronesia",
-  "marshall islands",
-  "cook islands",
-  "niue",
-  "new caledonia",
-];
-
 const EMPTY_EVENT_FILTERS: EventFilters = {
   eventName: "",
   eventType: "all",
   location: "all",
   horizon: "all",
 };
-
-function matchesHorizon(event: Event, horizon: EventHorizon) {
-  const location = event.location.toLowerCase();
-  const isSolomon = location.includes("solomon islands");
-  const isPacific = PACIFIC_LOCATION_MARKERS.some((marker) => location.includes(marker));
-
-  if (horizon === "solomon") return isSolomon;
-  if (horizon === "pacific") return isPacific;
-  if (horizon === "world") return !isPacific;
-  return true;
-}
 
 function isWithinDays(startsAt: string, days: number) {
   const now = new Date();
@@ -131,7 +104,7 @@ function EventExplorer({ events, actionId, onBook }: Pick<DashboardViewProps, "e
     { id: "world", label: "Beyond Pacific", detail: "Further afield" },
   ];
   const horizonCounts = Object.fromEntries(
-    horizonOptions.map((option) => [option.id, events.filter((event) => matchesHorizon(event, option.id)).length]),
+    horizonOptions.map((option) => [option.id, events.filter((event) => matchesEventHorizon(event, option.id)).length]),
   ) as Record<EventHorizon, number>;
   const filteredEvents = events.filter((event) => {
     const term = filters.eventName.toLowerCase();
@@ -140,7 +113,7 @@ function EventExplorer({ events, actionId, onBook }: Pick<DashboardViewProps, "e
     const matchesType = filters.eventType === "all" || event.category === filters.eventType;
     const matchesLocation = filters.location === "all" || event.location === filters.location;
     const matchesDate = dateWindow === "all" || isWithinDays(event.startsAt, Number(dateWindow));
-    return matchesName && matchesType && matchesLocation && matchesHorizon(event, filters.horizon) && matchesDate;
+    return matchesName && matchesType && matchesLocation && matchesEventHorizon(event, filters.horizon) && matchesDate;
   }).sort((left, right) => {
     if (sortOrder === "name") return left.title.localeCompare(right.title);
     if (sortOrder === "availability") return right.remainingTickets - left.remainingTickets;

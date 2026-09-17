@@ -16,7 +16,7 @@ update public.events set
   title = 'Solomon Islands Music & Arts Festival',
   description = 'A celebration of Solomon Islands music, dance, visual arts, and food beside the Honiara waterfront.',
   category = 'Festival', venue = 'Heritage Park', location = 'Honiara, Solomon Islands',
-  price_cents = 25000, currency = 'SBD'
+  starts_at = '2026-10-03 08:30:00+00', price_cents = 25000, currency = 'SBD'
 where id = 'a5a71bf1-1929-4d86-a7aa-111111111111';
 
 update public.events set
