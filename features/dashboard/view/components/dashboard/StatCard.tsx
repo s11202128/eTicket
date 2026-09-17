@@ -8,12 +8,10 @@ type StatCardProps = {
 function StatIcon({ icon }: { icon: DashboardStat["icon"] }) {
   const iconMap: Record<DashboardStat["icon"], string> = {
     dashboard: "▦",
-    ticket: "🎫",
-    event: "🎵",
-    profile: "👤",
-    logout: "↪",
-    calendar: "📅",
-    clock: "⏱",
+    ticket: "▱",
+    event: "◇",
+    profile: "○",
+    logout: "↗",
   };
 
   return <span aria-hidden>{iconMap[icon]}</span>;

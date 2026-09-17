@@ -1,4 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import {
+  getSupabaseClient,
+  getSupabaseConfigurationError,
+  isDemoMode,
+} from "@/lib/supabase";
 import type {
   AuthResult,
   LoginCredentials,
@@ -9,7 +13,16 @@ import type {
 export async function signInWithEmail(
   credentials: LoginCredentials
 ): Promise<AuthResult> {
-  const { error } = await supabase.auth.signInWithPassword({
+  if (isDemoMode) {
+    localStorage.setItem("eticket-demo-session", "active");
+    localStorage.setItem("eticket-demo-email", credentials.email);
+    return { ok: true };
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return { ok: false, errorMessage: getSupabaseConfigurationError() };
+
+  const { error } = await client.auth.signInWithPassword({
     email: credentials.email,
     password: credentials.password,
   });
@@ -27,9 +40,20 @@ export async function signInWithEmail(
 export async function signUpWithEmail(
   credentials: SignupCredentials
 ): Promise<SignupResult> {
-  const { data, error } = await supabase.auth.signUp({
+  if (isDemoMode) {
+    localStorage.setItem("eticket-demo-session", "active");
+    localStorage.setItem("eticket-demo-email", credentials.email);
+    localStorage.setItem("eticket-demo-name", credentials.fullName);
+    return { ok: true, requiresEmailVerification: false };
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return { ok: false, errorMessage: getSupabaseConfigurationError() };
+
+  const { data, error } = await client.auth.signUp({
     email: credentials.email,
     password: credentials.password,
+    options: { data: { full_name: credentials.fullName } },
   });
 
   if (error) {
@@ -49,7 +73,12 @@ export async function requestPasswordReset(
   email: string,
   redirectTo?: string
 ): Promise<AuthResult> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  if (isDemoMode) return { ok: true };
+
+  const client = getSupabaseClient();
+  if (!client) return { ok: false, errorMessage: getSupabaseConfigurationError() };
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo,
   });
 
@@ -61,4 +90,14 @@ export async function requestPasswordReset(
   }
 
   return { ok: true };
+}
+
+export async function updatePassword(password: string): Promise<AuthResult> {
+  if (isDemoMode) return { ok: true };
+
+  const client = getSupabaseClient();
+  if (!client) return { ok: false, errorMessage: getSupabaseConfigurationError() };
+
+  const { error } = await client.auth.updateUser({ password });
+  return error ? { ok: false, errorMessage: error.message } : { ok: true };
 }

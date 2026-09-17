@@ -1,5 +1,6 @@
 import Link from "next/link";
 import styles from "@/features/auth/view/AuthCard.module.css";
+import { isDemoMode } from "@/lib/supabase";
 
 type LoginViewProps = {
   email: string;
@@ -24,9 +25,12 @@ export function LoginView({
 }: LoginViewProps) {
   return (
     <main className={styles.page}>
+      <Link href="/" className={styles.logo}>eTicket<span>.</span></Link>
       <section className={styles.card}>
         <div className={styles.left}>
+          <span className={styles.eyebrow}>WELCOME BACK</span>
           <h1 className={styles.title}>Welcome</h1>
+          <p className={styles.intro}>Sign in to access your tickets and discover what&apos;s next.</p>
 
           <form
             className={styles.form}
@@ -35,6 +39,7 @@ export function LoginView({
               void onSubmit();
             }}
           >
+            <label className={styles.srOnly} htmlFor="email">Email</label>
             <input
               className={styles.input}
               id="email"
@@ -43,8 +48,10 @@ export function LoginView({
               onChange={(event) => onEmailChange(event.target.value)}
               placeholder="Email"
               autoComplete="email"
+              required
             />
 
+            <label className={styles.srOnly} htmlFor="password">Password</label>
             <input
               className={styles.input}
               id="password"
@@ -53,6 +60,7 @@ export function LoginView({
               onChange={(event) => onPasswordChange(event.target.value)}
               placeholder="Password"
               autoComplete="current-password"
+              required
             />
 
             <Link className={styles.forgot} href="/forgot-password">
@@ -65,10 +73,13 @@ export function LoginView({
           </form>
 
           {error ? <p className={styles.error}>{error}</p> : null}
+          {isDemoMode ? <p className={styles.demoNote}>Preview mode: use any email and password to enter.</p> : null}
         </div>
 
         <aside className={styles.right}>
-          <p className={styles.panelText}>Don&apos;t have an account? Please Sign up!</p>
+          <span className={styles.eyebrowLight}>NEW HERE?</span>
+          <h2>Make tonight count.</h2>
+          <p className={styles.panelText}>Create an account to book and manage every experience.</p>
           <Link className={styles.outlineButton} href="/signup">
             SIGN UP
           </Link>

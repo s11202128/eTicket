@@ -30,7 +30,7 @@ export function useForgotPasswordViewModel(): ForgotPasswordViewModel {
 
     try {
       const redirectTo =
-        typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
+        typeof window !== "undefined" ? `${window.location.origin}/update-password` : undefined;
 
       const result = await requestPasswordReset(email.trim(), redirectTo);
 

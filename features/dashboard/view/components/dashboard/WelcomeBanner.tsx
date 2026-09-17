@@ -8,8 +8,8 @@ type WelcomeBannerProps = {
 export function WelcomeBanner({ userName, updatedAt }: WelcomeBannerProps) {
   return (
     <section className={styles.welcome}>
-      <h1>Welcome Back, {userName}!</h1>
-      {updatedAt ? <p className={styles.meta}>Last updated: {updatedAt}</p> : null}
+      <div><span className={styles.eyebrow}>YOUR WEEK IN LIVE</span><h1>Good to see you, {userName.split(" ")[0]}.</h1></div>
+      {updatedAt ? <p className={styles.meta}>Synced {new Date(updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p> : null}
     </section>
   );
 }

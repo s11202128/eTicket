@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signUpWithEmail } from "@/features/auth/model/auth.repository";
+import { isDemoMode } from "@/lib/supabase";
 import type { SignupCredentials } from "@/features/auth/model/auth.types";
 
 type SignupViewModel = {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -12,6 +15,7 @@ type SignupViewModel = {
   error: string | null;
   successMessage: string | null;
   isFormValid: boolean;
+  onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -19,6 +23,8 @@ type SignupViewModel = {
 };
 
 export function useSignupViewModel(): SignupViewModel {
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,11 +43,12 @@ export function useSignupViewModel(): SignupViewModel {
 
   const isFormValid = useMemo(() => {
     return (
+      fullName.trim().length >= 2 &&
       email.trim().length > 0 &&
       password.trim().length >= 6 &&
       confirmPassword.trim().length > 0
     );
-  }, [email, password, confirmPassword]);
+  }, [fullName, email, password, confirmPassword]);
 
   const onSubmit = async () => {
     if (!isFormValid || isSubmitting) return;
@@ -57,6 +64,7 @@ export function useSignupViewModel(): SignupViewModel {
 
     try {
       const credentials: SignupCredentials = {
+        fullName: fullName.trim(),
         email: email.trim(),
         password,
       };
@@ -75,6 +83,11 @@ export function useSignupViewModel(): SignupViewModel {
         return;
       }
 
+      if (isDemoMode) {
+        router.push("/dashboard");
+        return;
+      }
+
       setSuccessMessage("Account created successfully. You can sign in now.");
     } catch {
       setError("Signup failed. Please try again.");
@@ -84,6 +97,7 @@ export function useSignupViewModel(): SignupViewModel {
   };
 
   return {
+    fullName,
     email,
     password,
     confirmPassword,
@@ -91,6 +105,7 @@ export function useSignupViewModel(): SignupViewModel {
     error,
     successMessage,
     isFormValid,
+    onFullNameChange: setFullName,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,
     onConfirmPasswordChange: setConfirmPassword,

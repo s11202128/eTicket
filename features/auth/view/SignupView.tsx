@@ -2,6 +2,7 @@ import Link from "next/link";
 import styles from "@/features/auth/view/AuthCard.module.css";
 
 type SignupViewProps = {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -9,6 +10,7 @@ type SignupViewProps = {
   error: string | null;
   successMessage: string | null;
   isFormValid: boolean;
+  onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -16,6 +18,7 @@ type SignupViewProps = {
 };
 
 export function SignupView({
+  fullName,
   email,
   password,
   confirmPassword,
@@ -23,6 +26,7 @@ export function SignupView({
   error,
   successMessage,
   isFormValid,
+  onFullNameChange,
   onEmailChange,
   onPasswordChange,
   onConfirmPasswordChange,
@@ -30,9 +34,12 @@ export function SignupView({
 }: SignupViewProps) {
   return (
     <main className={styles.page}>
+      <Link href="/" className={styles.logo}>eTicket<span>.</span></Link>
       <section className={styles.card}>
         <div className={styles.left}>
+          <span className={styles.eyebrow}>JOIN ETICKET</span>
           <h1 className={styles.title}>Create Account</h1>
+          <p className={styles.intro}>Your next favorite night is only a few details away.</p>
           <form
             className={styles.form}
             onSubmit={(event) => {
@@ -40,6 +47,18 @@ export function SignupView({
               void onSubmit();
             }}
           >
+            <label className={styles.srOnly} htmlFor="signup-name">Full name</label>
+            <input
+              className={styles.input}
+              id="signup-name"
+              type="text"
+              value={fullName}
+              onChange={(event) => onFullNameChange(event.target.value)}
+              placeholder="Full name"
+              autoComplete="name"
+              required
+            />
+            <label className={styles.srOnly} htmlFor="signup-email">Email</label>
             <input
               className={styles.input}
               id="signup-email"
@@ -48,7 +67,9 @@ export function SignupView({
               onChange={(event) => onEmailChange(event.target.value)}
               placeholder="Email"
               autoComplete="email"
+              required
             />
+            <label className={styles.srOnly} htmlFor="signup-password">Password</label>
             <input
               className={styles.input}
               id="signup-password"
@@ -57,7 +78,10 @@ export function SignupView({
               onChange={(event) => onPasswordChange(event.target.value)}
               placeholder="Password"
               autoComplete="new-password"
+              minLength={6}
+              required
             />
+            <label className={styles.srOnly} htmlFor="signup-confirm-password">Confirm password</label>
             <input
               className={styles.input}
               id="signup-confirm-password"
@@ -66,6 +90,8 @@ export function SignupView({
               onChange={(event) => onConfirmPasswordChange(event.target.value)}
               placeholder="Confirm Password"
               autoComplete="new-password"
+              minLength={6}
+              required
             />
             <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
               {isSubmitting ? "CREATING..." : "SIGN UP"}
@@ -77,7 +103,9 @@ export function SignupView({
         </div>
 
         <aside className={styles.right}>
-          <p className={styles.panelText}>Already have an account? Please Sign in!</p>
+          <span className={styles.eyebrowLight}>ALREADY A MEMBER?</span>
+          <h2>Welcome back.</h2>
+          <p className={styles.panelText}>Your tickets are waiting exactly where you left them.</p>
           <Link className={styles.outlineButton} href="/login">
             SIGN IN
           </Link>

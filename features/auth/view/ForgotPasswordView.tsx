@@ -22,9 +22,12 @@ export function ForgotPasswordView({
 }: ForgotPasswordViewProps) {
   return (
     <main className={styles.page}>
+      <Link href="/" className={styles.logo}>eTicket<span>.</span></Link>
       <section className={styles.card}>
         <div className={styles.left}>
+          <span className={styles.eyebrow}>ACCOUNT ACCESS</span>
           <h1 className={styles.title}>Reset Password</h1>
+          <p className={styles.intro}>We&apos;ll send a secure reset link to your inbox.</p>
 
           <form
             className={styles.form}
@@ -33,6 +36,7 @@ export function ForgotPasswordView({
               void onSubmit();
             }}
           >
+            <label className={styles.srOnly} htmlFor="reset-email">Email</label>
             <input
               className={styles.input}
               id="reset-email"
@@ -41,6 +45,7 @@ export function ForgotPasswordView({
               onChange={(event) => onEmailChange(event.target.value)}
               placeholder="Email"
               autoComplete="email"
+              required
             />
 
             <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
@@ -53,7 +58,9 @@ export function ForgotPasswordView({
         </div>
 
         <aside className={styles.right}>
-          <p className={styles.panelText}>Remembered your password? Go back and sign in.</p>
+          <span className={styles.eyebrowLight}>ALL GOOD?</span>
+          <h2>Back to the fun part.</h2>
+          <p className={styles.panelText}>Return to sign in and open your member space.</p>
           <Link className={styles.outlineButton} href="/login">
             SIGN IN
           </Link>
