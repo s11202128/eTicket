@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "eTicket — Find your next live moment",
-  description: "Discover events, book securely, and keep every ticket in one place.",
+  title: "eTicket — Solomon Islands to the world",
+  description: "Discover and book events in Solomon Islands, across the Pacific, and around the world.",
 };
 
 export default function RootLayout({

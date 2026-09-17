@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       status: "active" as const,
       quantity,
       totalPriceCents: event.priceCents * quantity,
+      currency: event.currency,
       bookingReference: reference,
       qrData: reference,
     };

@@ -7,7 +7,6 @@ type LoginViewProps = {
   password: string;
   isSubmitting: boolean;
   error: string | null;
-  isFormValid: boolean;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => Promise<void>;
@@ -18,7 +17,6 @@ export function LoginView({
   password,
   isSubmitting,
   error,
-  isFormValid,
   onEmailChange,
   onPasswordChange,
   onSubmit,
@@ -34,6 +32,7 @@ export function LoginView({
 
           <form
             className={styles.form}
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
               void onSubmit();
@@ -67,12 +66,12 @@ export function LoginView({
               Forgot password?
             </Link>
 
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
+            <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
               {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
             </button>
           </form>
 
-          {error ? <p className={styles.error}>{error}</p> : null}
+          {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
           {isDemoMode ? <p className={styles.demoNote}>Preview mode: use any email and password to enter.</p> : null}
         </div>
 

@@ -1,6 +1,6 @@
 # eTicket
 
-A full-stack event discovery and digital ticketing application built with Next.js 16 and Supabase.
+A Solomon Islands–based, full-stack event discovery and digital ticketing application for Pacific and international events, built with Next.js 16 and Supabase.
 
 ## Features
 
@@ -11,6 +11,7 @@ A full-stack event discovery and digital ticketing application built with Next.j
 - Atomic ticket booking with capacity checks
 - Row-level security for profiles and tickets
 - Credential-free demo mode for local product previews
+- Per-event currencies including SBD and other regional or international currencies
 
 ## Local development
 

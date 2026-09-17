@@ -21,13 +21,13 @@ export async function GET(request: Request) {
     client.from("profiles").select("full_name,email,phone,avatar_url").eq("id", auth.user.id).maybeSingle(),
     client
       .from("events")
-      .select("id,title,description,category,venue,location,starts_at,image_url,price_cents,capacity,tickets_sold,featured")
+      .select("id,title,description,category,venue,location,starts_at,image_url,price_cents,currency,capacity,tickets_sold,featured")
       .eq("published", true)
       .gte("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true }),
     client
       .from("tickets")
-      .select("id,event_id,quantity,unit_price_cents,booking_reference,status,events(title,starts_at,venue,location,image_url)")
+      .select("id,event_id,quantity,unit_price_cents,currency,booking_reference,status,events(title,starts_at,venue,location,image_url)")
       .eq("user_id", auth.user.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -46,6 +46,7 @@ export async function GET(request: Request) {
     startsAt: event.starts_at,
     imageUrl: event.image_url,
     priceCents: event.price_cents,
+    currency: event.currency,
     capacity: event.capacity,
     remainingTickets: Math.max(event.capacity - event.tickets_sold, 0),
     featured: event.featured,
@@ -65,6 +66,7 @@ export async function GET(request: Request) {
       status: new Date(startsAt) < new Date() ? "used" : ticket.status,
       quantity: ticket.quantity,
       totalPriceCents: ticket.quantity * ticket.unit_price_cents,
+      currency: ticket.currency,
       bookingReference: ticket.booking_reference,
       qrData: ticket.booking_reference,
     };

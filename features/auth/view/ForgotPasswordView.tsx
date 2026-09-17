@@ -6,7 +6,6 @@ type ForgotPasswordViewProps = {
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
-  isFormValid: boolean;
   onEmailChange: (value: string) => void;
   onSubmit: () => Promise<void>;
 };
@@ -16,7 +15,6 @@ export function ForgotPasswordView({
   isSubmitting,
   error,
   successMessage,
-  isFormValid,
   onEmailChange,
   onSubmit,
 }: ForgotPasswordViewProps) {
@@ -31,6 +29,7 @@ export function ForgotPasswordView({
 
           <form
             className={styles.form}
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
               void onSubmit();
@@ -48,13 +47,13 @@ export function ForgotPasswordView({
               required
             />
 
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
+            <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
               {isSubmitting ? "SENDING..." : "SEND RESET LINK"}
             </button>
           </form>
 
-          {error ? <p className={styles.error}>{error}</p> : null}
-          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
+          {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
+          {successMessage ? <p className={styles.success} role="status">{successMessage}</p> : null}
         </div>
 
         <aside className={styles.right}>

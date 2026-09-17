@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { updatePassword } from "@/features/auth/model/auth.repository";
+import { getPasswordError } from "@/features/auth/model/auth.validation";
 
 export function useUpdatePasswordViewModel() {
   const [password, setPassword] = useState("");
@@ -9,13 +10,17 @@ export function useUpdatePasswordViewModel() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const isFormValid = useMemo(
-    () => password.length >= 6 && confirmPassword.length >= 6,
-    [password, confirmPassword],
-  );
-
   const onSubmit = async () => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    if (!confirmPassword) {
+      setError("Confirm your new password.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -35,7 +40,6 @@ export function useUpdatePasswordViewModel() {
     isSubmitting,
     error,
     successMessage,
-    isFormValid,
     onPasswordChange: setPassword,
     onConfirmPasswordChange: setConfirmPassword,
     onSubmit,

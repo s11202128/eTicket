@@ -9,7 +9,6 @@ type SignupViewProps = {
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
-  isFormValid: boolean;
   onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
@@ -25,7 +24,6 @@ export function SignupView({
   isSubmitting,
   error,
   successMessage,
-  isFormValid,
   onFullNameChange,
   onEmailChange,
   onPasswordChange,
@@ -42,6 +40,7 @@ export function SignupView({
           <p className={styles.intro}>Your next favorite night is only a few details away.</p>
           <form
             className={styles.form}
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
               void onSubmit();
@@ -93,13 +92,13 @@ export function SignupView({
               minLength={6}
               required
             />
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
+            <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
               {isSubmitting ? "CREATING..." : "SIGN UP"}
             </button>
           </form>
 
-          {error ? <p className={styles.error}>{error}</p> : null}
-          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
+          {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
+          {successMessage ? <p className={styles.success} role="status">{successMessage}</p> : null}
         </div>
 
         <aside className={styles.right}>

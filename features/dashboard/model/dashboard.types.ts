@@ -19,6 +19,7 @@ export type Event = {
   startsAt: string;
   imageUrl: string;
   priceCents: number;
+  currency: string;
   capacity: number;
   remainingTickets: number;
   featured: boolean;
@@ -37,6 +38,7 @@ export type Ticket = {
   status: TicketStatus;
   quantity: number;
   totalPriceCents: number;
+  currency: string;
   bookingReference: string;
   qrData: string;
 };

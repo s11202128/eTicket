@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUpWithEmail } from "@/features/auth/model/auth.repository";
 import { isDemoMode } from "@/lib/supabase";
+import { getPasswordError, isValidEmail } from "@/features/auth/model/auth.validation";
 import type { SignupCredentials } from "@/features/auth/model/auth.types";
 
 type SignupViewModel = {
@@ -14,7 +15,6 @@ type SignupViewModel = {
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
-  isFormValid: boolean;
   onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
@@ -41,17 +41,25 @@ export function useSignupViewModel(): SignupViewModel {
     }
   }, [email]);
 
-  const isFormValid = useMemo(() => {
-    return (
-      fullName.trim().length >= 2 &&
-      email.trim().length > 0 &&
-      password.trim().length >= 6 &&
-      confirmPassword.trim().length > 0
-    );
-  }, [fullName, email, password, confirmPassword]);
-
   const onSubmit = async () => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+    if (fullName.trim().length < 2) {
+      setError("Enter your full name (at least 2 characters).");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    if (!confirmPassword) {
+      setError("Confirm your password.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -104,7 +112,6 @@ export function useSignupViewModel(): SignupViewModel {
     isSubmitting,
     error,
     successMessage,
-    isFormValid,
     onFullNameChange: setFullName,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,

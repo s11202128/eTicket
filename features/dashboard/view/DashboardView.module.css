@@ -13,7 +13,7 @@
 .contentArea { min-width: 0; }
 .topbar { height: 84px; display: flex; justify-content: flex-end; align-items: center; gap: 14px; padding: 0 5vw; border-bottom: 1px solid #dedbd2; }
 .topbarCopy { display: grid; text-align: right; }
-.topbarCopy span { color: #7a786f; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.topbarCopy span { color: #626059; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
 .topbarCopy strong { font-size: .9rem; }
 .avatar, .avatarFallback { width: 42px; height: 42px; border-radius: 50%; }
 .avatar { object-fit: cover; }
@@ -21,7 +21,7 @@
 .main { width: min(1180px, 100%); margin: 0 auto; padding: 44px 5vw 72px; display: grid; gap: 34px; }
 .welcome { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
 .welcome h1, .pageHeading h1 { margin: 7px 0 0; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3.8rem); font-weight: 500; letter-spacing: -.04em; }
-.eyebrow, .eyebrowLight { color: #747268; font-size: .67rem; font-weight: 800; letter-spacing: .18em; }
+.eyebrow, .eyebrowLight { color: #626059; font-size: .67rem; font-weight: 800; letter-spacing: .18em; }
 .eyebrowLight { color: #d6ff50; }
 .meta { margin: 0; color: #77756d; font-size: .78rem; }
 .statsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -48,14 +48,65 @@
 .eventImageWrap { height: 190px; position: relative; overflow: hidden; border-radius: 8px; }
 .eventImage { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
 .card:hover .eventImage { transform: scale(1.035); }
-.eventImageWrap span { position: absolute; top: 10px; left: 10px; padding: 5px 9px; border-radius: 999px; background: rgba(255,255,255,.88); font-size: .65rem; font-weight: 800; }
+.eventBadges { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; gap: 8px; }
+.eventBadges span { padding: 5px 9px; border-radius: 999px; background: #fff; font-size: .62rem; font-weight: 800; }
+.eventBadges span + span { background: #d6ff50; color: #253000; }
 .eventDate { margin: 15px 8px 5px; color: #806900; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .eventGrid h3, .eventGrid .subtle, .priceRow { margin-left: 8px; margin-right: 8px; }
 .eventGrid h3 { margin-top: 0; }
+.eventDescription { min-height: 3.8em; display: -webkit-box; overflow: hidden; margin: 12px 8px 0; color: #65635c; font-size: .75rem; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .priceRow { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+.priceRow > div { display: grid; gap: 3px; }
+.availability, .availabilityLow { color: #68665f; font-size: .62rem; font-weight: 700; }
+.availabilityLow { color: #9d3a20; }
 .bookBtn { padding: 8px 14px; background: #d6ff50; color: #171714; font-size: .73rem; }
 .pageHeading { max-width: 720px; padding: 18px 0 12px; }
 .pageHeading p { max-width: 570px; color: #6e6c65; font-size: 1rem; line-height: 1.65; }
+.discoveryDeck { position: relative; overflow: hidden; display: grid; gap: 22px; padding: clamp(24px, 4vw, 42px); border-radius: 24px 24px 8px 24px; background: #191916; color: #fff; box-shadow: 0 24px 70px rgba(35, 33, 25, .14); }
+.discoveryDeck::before { content: ""; width: 330px; height: 330px; position: absolute; top: -210px; right: 4%; border: 1px solid rgba(214,255,80,.2); border-radius: 50%; box-shadow: 0 0 0 55px rgba(214,255,80,.035), 0 0 0 110px rgba(214,255,80,.025); pointer-events: none; }
+.discoveryIntro { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+.discoveryIntro > div:first-child { max-width: 650px; }
+.discoveryEyebrow { color: #d6ff50; font-size: .64rem; font-weight: 900; letter-spacing: .2em; }
+.discoveryIntro h2 { margin: 9px 0 8px; font-family: Georgia, serif; font-size: clamp(1.75rem, 3.4vw, 3.15rem); font-weight: 500; letter-spacing: -.035em; }
+.discoveryIntro p { margin: 0; color: #b8b7ad; font-size: .84rem; line-height: 1.6; }
+.compassMark { width: 78px; height: 78px; position: relative; flex: 0 0 78px; display: grid; place-items: center; border: 1px solid #4b4b42; border-radius: 50%; color: #d6ff50; }
+.compassMark::before, .compassMark::after { content: ""; position: absolute; background: #4b4b42; }
+.compassMark::before { width: 1px; height: 100%; }
+.compassMark::after { width: 100%; height: 1px; }
+.compassMark span { position: absolute; top: 7px; z-index: 1; font-size: .55rem; font-weight: 900; }
+.compassMark i { width: 22px; height: 22px; z-index: 1; border: 1px solid #d6ff50; transform: rotate(45deg); }
+.compassMark b { width: 6px; height: 6px; position: absolute; z-index: 2; border-radius: 50%; background: #d6ff50; }
+.horizonPicker { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #3c3c36; border-radius: 12px; background: #22221e; }
+.horizonPicker button { min-width: 0; position: relative; display: grid; gap: 3px; padding: 15px 42px 15px 16px; border: 0; border-right: 1px solid #3c3c36; background: transparent; color: #fff; font: inherit; text-align: left; cursor: pointer; transition: background .2s ease, color .2s ease; }
+.horizonPicker button:last-child { border-right: 0; }
+.horizonPicker button:hover { background: #2e2e27; }
+.horizonPicker button span { overflow: hidden; font-size: .72rem; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.horizonPicker button small { overflow: hidden; color: #96958c; font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
+.horizonPicker button strong { min-width: 23px; height: 23px; position: absolute; top: 50%; right: 13px; display: grid; place-items: center; border-radius: 50%; background: #393932; color: #d6ff50; font-size: .6rem; transform: translateY(-50%); }
+.horizonPicker .horizonActive { background: #d6ff50; color: #171714; }
+.horizonPicker .horizonActive:hover { background: #d6ff50; }
+.horizonPicker .horizonActive small { color: #536200; }
+.horizonPicker .horizonActive strong { background: #171714; color: #d6ff50; }
+.eventFinder { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr 1.3fr auto; align-items: end; gap: 12px; }
+.filterLabel { display: grid; gap: 7px; color: #aaa99f; font-size: .63rem; font-weight: 800; letter-spacing: .04em; }
+.filterLabel input, .filterLabel select { min-width: 0; height: 46px; border: 1px solid #53534a; border-radius: 8px; padding: 0 12px; background: #2a2a25; color: #fff; font: inherit; }
+.filterLabel input::placeholder { color: #86857d; }
+.filterLabel input:focus, .filterLabel select:focus { outline: 2px solid #d6ff50; outline-offset: 2px; border-color: #d6ff50; }
+.filterButton { height: 46px; display: inline-flex; align-items: center; gap: 9px; border: 0; border-radius: 999px; padding: 0 20px; background: #d6ff50; color: #171714; font: inherit; font-size: .7rem; font-weight: 900; cursor: pointer; }
+.filterButton span { font-size: 1rem; transition: transform .2s ease; }
+.filterButton:hover span { transform: translate(2px, -2px); }
+.resultToolbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 4px 2px; }
+.resultSummary { display: flex; align-items: center; gap: 12px; }
+.resultSummary > span { min-width: 47px; height: 47px; display: grid; place-items: center; border-radius: 50% 50% 50% 12px; background: #d6ff50; font-family: Georgia, serif; font-size: 1.3rem; }
+.resultSummary > div { display: grid; gap: 2px; }
+.resultSummary strong { font-size: .78rem; }
+.resultSummary small { color: #626059; font-size: .64rem; }
+.resultControls { display: flex; align-items: end; gap: 10px; }
+.resultControls label { display: grid; gap: 4px; color: #626059; font-size: .58rem; font-weight: 800; letter-spacing: .05em; }
+.resultControls select { min-width: 130px; height: 38px; border: 1px solid #d5d2c8; border-radius: 8px; padding: 0 10px; background: #fff; color: #1b1b19; font: inherit; font-size: .7rem; }
+.resultControls select:focus { outline: 2px solid #aacb32; outline-offset: 1px; }
+.resultControls button { height: 38px; border: 0; border-radius: 999px; padding: 0 14px; background: #e5e1d8; color: #31302b; font: inherit; font-size: .65rem; font-weight: 800; cursor: pointer; }
+.emptyCompass { color: #879f2e; font-size: 2.8rem; line-height: 1; }
 .ticketGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .ticketHeader { display: flex; justify-content: space-between; gap: 16px; }
 .ticketHeader h3 { font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
@@ -91,7 +142,7 @@
 .emptyHero p, .emptyState p { margin: 0 0 22px; color: #68665f; }
 .emptyState { justify-items: center; text-align: center; background: #fff; border: 1px solid #dedbd2; }
 
-@media (max-width: 1000px) { .eventGrid { grid-template-columns: repeat(2, 1fr); } .ticketGrid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .eventGrid { grid-template-columns: repeat(2, 1fr); } .ticketGrid { grid-template-columns: 1fr; } .eventFinder { grid-template-columns: 1fr 1fr; } .horizonPicker { grid-template-columns: repeat(2, 1fr); } .horizonPicker button:nth-child(2) { border-right: 0; } .horizonPicker button:nth-child(-n+2) { border-bottom: 1px solid #3c3c36; } }
 @media (max-width: 760px) {
   .layout { grid-template-columns: 1fr; padding-bottom: 72px; }
   .sidebar { position: fixed; top: auto; bottom: 0; z-index: 20; width: 100%; height: 70px; padding: 8px; }
@@ -103,6 +154,15 @@
   .main { padding: 28px 18px 50px; }
   .statsGrid { grid-template-columns: 1fr; }
   .eventGrid { grid-template-columns: 1fr; }
+  .eventFinder { grid-template-columns: 1fr; }
+  .discoveryDeck { margin: 0 -4px; padding: 24px 18px; border-radius: 18px 18px 6px 18px; }
+  .compassMark { display: none; }
+  .horizonPicker { grid-template-columns: 1fr 1fr; }
+  .horizonPicker button { padding-right: 38px; }
+  .resultToolbar { align-items: flex-start; flex-direction: column; }
+  .resultControls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .resultControls select { width: 100%; min-width: 0; }
+  .resultControls button { grid-column: 1 / -1; }
   .welcome { align-items: flex-start; flex-direction: column; }
   .nextEvent { min-height: 300px; padding: 24px; }
   .formGrid { grid-template-columns: 1fr; }
