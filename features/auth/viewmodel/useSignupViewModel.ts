@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signUpWithEmail } from "@/features/auth/model/auth.repository";
+import { isDemoMode } from "@/lib/supabase";
+import { getPasswordError, isValidEmail } from "@/features/auth/model/auth.validation";
 import type { SignupCredentials } from "@/features/auth/model/auth.types";
 
 type SignupViewModel = {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
-  isFormValid: boolean;
+  onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -19,6 +23,8 @@ type SignupViewModel = {
 };
 
 export function useSignupViewModel(): SignupViewModel {
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,16 +41,25 @@ export function useSignupViewModel(): SignupViewModel {
     }
   }, [email]);
 
-  const isFormValid = useMemo(() => {
-    return (
-      email.trim().length > 0 &&
-      password.trim().length >= 6 &&
-      confirmPassword.trim().length > 0
-    );
-  }, [email, password, confirmPassword]);
-
   const onSubmit = async () => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+    if (fullName.trim().length < 2) {
+      setError("Enter your full name (at least 2 characters).");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    if (!confirmPassword) {
+      setError("Confirm your password.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -57,6 +72,7 @@ export function useSignupViewModel(): SignupViewModel {
 
     try {
       const credentials: SignupCredentials = {
+        fullName: fullName.trim(),
         email: email.trim(),
         password,
       };
@@ -75,6 +91,11 @@ export function useSignupViewModel(): SignupViewModel {
         return;
       }
 
+      if (isDemoMode) {
+        router.push("/dashboard");
+        return;
+      }
+
       setSuccessMessage("Account created successfully. You can sign in now.");
     } catch {
       setError("Signup failed. Please try again.");
@@ -84,13 +105,14 @@ export function useSignupViewModel(): SignupViewModel {
   };
 
   return {
+    fullName,
     email,
     password,
     confirmPassword,
     isSubmitting,
     error,
     successMessage,
-    isFormValid,
+    onFullNameChange: setFullName,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,
     onConfirmPasswordChange: setConfirmPassword,

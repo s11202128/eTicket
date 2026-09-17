@@ -1,18 +1,17 @@
 import styles from "@/features/dashboard/view/DashboardView.module.css";
+import Image from "next/image";
 
 type TopbarProps = {
-  notifications: number;
-  avatarUrl: string;
+  userName: string;
+  avatarUrl: string | null;
 };
 
-export function Topbar({ notifications, avatarUrl }: TopbarProps) {
+export function Topbar({ userName, avatarUrl }: TopbarProps) {
+  const initials = userName.split(" ").filter(Boolean).map((part) => part[0]).slice(0, 2).join("").toUpperCase() || "ET";
   return (
     <header className={styles.topbar}>
-      <button className={styles.notify} type="button" aria-label={`Notifications ${notifications}`}>
-        🔔
-        {notifications > 0 ? <span className={styles.notifyDot} /> : null}
-      </button>
-      <img src={avatarUrl} alt="Profile" className={styles.avatar} />
+      <div className={styles.topbarCopy}><span>Member space</span><strong>{userName}</strong></div>
+      {avatarUrl ? <Image src={avatarUrl} alt="" width={42} height={42} className={styles.avatar} /> : <span className={styles.avatarFallback}>{initials}</span>}
     </header>
   );
 }

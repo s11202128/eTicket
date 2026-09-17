@@ -1,67 +1,67 @@
-export type IconName =
-  | "dashboard"
-  | "ticket"
-  | "event"
-  | "profile"
-  | "logout"
-  | "calendar"
-  | "clock";
+export type DashboardViewName = "dashboard" | "events" | "tickets" | "profile";
+
+export type IconName = "dashboard" | "ticket" | "event" | "profile" | "admin" | "logout";
 
 export type SidebarItem = {
-  id: string;
+  id: DashboardViewName | "admin" | "logout";
   label: string;
   href: string;
   icon: IconName;
-  active?: boolean;
+};
+
+export type Event = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  venue: string;
+  location: string;
+  startsAt: string;
+  imageUrl: string;
+  priceCents: number;
+  currency: string;
+  capacity: number;
+  remainingTickets: number;
+  featured: boolean;
+};
+
+export type TicketStatus = "active" | "used" | "cancelled";
+
+export type Ticket = {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  startsAt: string;
+  venue: string;
+  location: string;
+  imageUrl: string;
+  status: TicketStatus;
+  quantity: number;
+  totalPriceCents: number;
+  currency: string;
+  bookingReference: string;
+  qrData: string;
+};
+
+export type UserProfile = {
+  displayName: string;
+  email: string;
+  phone: string;
+  avatarUrl: string | null;
+  role: "customer" | "admin";
+};
+
+export type DashboardSnapshot = {
+  profile: UserProfile;
+  events: Event[];
+  tickets: Ticket[];
+  updatedAt: string;
 };
 
 export type DashboardStat = {
   id: string;
   title: string;
-  value: number;
+  value: string;
   subtitle: string;
   icon: IconName;
-};
-
-export type NextEvent = {
-  title: string;
-  dateTime: string;
-  location: string;
-  imageUrl: string;
-  ctaLabel: string;
-};
-
-export type TicketStatus = "Active" | "Used";
-
-export type RecentTicket = {
-  id: string;
-  eventTitle: string;
-  date: string;
-  location: string;
-  status: TicketStatus;
-  qrImageUrl: string;
-};
-
-export type UpcomingEvent = {
-  id: string;
-  title: string;
-  date: string;
-  price: string;
-  imageUrl: string;
-};
-
-export type DashboardData = {
-  appName: string;
-  userName: string;
-  userAvatar: string;
-  notifications: number;
-  sidebarItems: SidebarItem[];
-  stats: DashboardStat[];
-  nextEvent: NextEvent;
-  recentTickets: RecentTicket[];
-  upcomingEvents: UpcomingEvent[];
-};
-
-export type DashboardSnapshot = DashboardData & {
-  updatedAt: string;
 };
