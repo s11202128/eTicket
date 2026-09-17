@@ -53,7 +53,10 @@ export async function signUpWithEmail(
   const { data, error } = await client.auth.signUp({
     email: credentials.email,
     password: credentials.password,
-    options: { data: { full_name: credentials.fullName } },
+    options: {
+      data: { full_name: credentials.fullName },
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
   });
 
   if (error) {
