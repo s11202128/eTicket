@@ -23,6 +23,15 @@ export function fetchAdminSnapshot(): Promise<AdminSnapshot> {
   return adminRequest<AdminSnapshot>("/api/admin/events");
 }
 
+export async function verifyAdminAccess(): Promise<boolean> {
+  try {
+    const result = await adminRequest<{ authorized: boolean }>("/api/admin/session");
+    return result.authorized;
+  } catch {
+    return false;
+  }
+}
+
 export async function createManagedEvent(input: AdminEventInput): Promise<ManagedEvent> {
   const result = await adminRequest<{ event: ManagedEvent }>("/api/admin/events", {
     method: "POST",

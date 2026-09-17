@@ -4,6 +4,7 @@ export type AuthenticatedRequest = {
   client: SupabaseClient | null;
   user: User | { id: string; email: string };
   demo: boolean;
+  demoAdmin: boolean;
 };
 
 export function jsonError(message: string, status: number) {
@@ -35,10 +36,11 @@ export async function authenticateRequest(
     ? authorization.slice(7).trim()
     : "";
 
-  if (isServerDemoMode() && token === "demo-session") {
+  if (isServerDemoMode() && (token === "demo-session" || token === "demo-admin-session")) {
     return {
       client: null,
       demo: true,
+      demoAdmin: token === "demo-admin-session",
       user: { id: "00000000-0000-4000-8000-000000000001", email: "alex@example.com" },
     };
   }
@@ -51,14 +53,17 @@ export async function authenticateRequest(
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) return jsonError("Your session is invalid or expired.", 401);
 
-  return { client, user: data.user, demo: false };
+  return { client, user: data.user, demo: false, demoAdmin: false };
 }
 
 export async function authenticateAdminRequest(
   request: Request,
 ): Promise<AuthenticatedRequest | Response> {
   const auth = await authenticateRequest(request);
-  if (auth instanceof Response || auth.demo) return auth;
+  if (auth instanceof Response) return auth;
+  if (auth.demo) {
+    return auth.demoAdmin ? auth : jsonError("Administrator access is required.", 403);
+  }
 
   const { data, error } = await auth.client!
     .from("profiles")

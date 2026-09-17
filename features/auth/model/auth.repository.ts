@@ -16,6 +16,7 @@ export async function signInWithEmail(
   if (isDemoMode) {
     localStorage.setItem("eticket-demo-session", "active");
     localStorage.setItem("eticket-demo-email", credentials.email);
+    localStorage.setItem("eticket-demo-role", "customer");
     return { ok: true };
   }
 
@@ -37,6 +38,22 @@ export async function signInWithEmail(
   return { ok: true };
 }
 
+export async function signInAdminWithEmail(
+  credentials: LoginCredentials,
+): Promise<AuthResult> {
+  if (isDemoMode) {
+    if (credentials.email.trim().toLowerCase() !== "admin@eticket.sb") {
+      return { ok: false, errorMessage: "This account does not have administrator access." };
+    }
+    localStorage.setItem("eticket-demo-session", "active");
+    localStorage.setItem("eticket-demo-email", credentials.email.trim());
+    localStorage.setItem("eticket-demo-role", "admin");
+    return { ok: true };
+  }
+
+  return signInWithEmail(credentials);
+}
+
 export async function signUpWithEmail(
   credentials: SignupCredentials
 ): Promise<SignupResult> {
@@ -44,6 +61,7 @@ export async function signUpWithEmail(
     localStorage.setItem("eticket-demo-session", "active");
     localStorage.setItem("eticket-demo-email", credentials.email);
     localStorage.setItem("eticket-demo-name", credentials.fullName);
+    localStorage.setItem("eticket-demo-role", "customer");
     return { ok: true, requiresEmailVerification: false };
   }
 

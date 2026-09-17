@@ -69,9 +69,10 @@ export async function getCurrentUserProfile(): Promise<AuthUserProfile | null> {
 
 export async function getAccessToken(): Promise<string | null> {
   if (isDemoMode) {
-    return localStorage.getItem("eticket-demo-session") === "active"
-      ? "demo-session"
-      : null;
+    if (localStorage.getItem("eticket-demo-session") !== "active") return null;
+    return localStorage.getItem("eticket-demo-role") === "admin"
+      ? "demo-admin-session"
+      : "demo-session";
   }
 
   const client = getSupabaseClient();
@@ -83,6 +84,7 @@ export async function getAccessToken(): Promise<string | null> {
 export async function signOut(): Promise<void> {
   if (isDemoMode) {
     localStorage.removeItem("eticket-demo-session");
+    localStorage.removeItem("eticket-demo-role");
     return;
   }
 

@@ -30,7 +30,7 @@ For the complete local preview without a Supabase project:
 NEXT_PUBLIC_DEMO_MODE=true npm run dev
 ```
 
-In demo mode, use any valid email and password on the sign-in screen.
+In demo mode, use any valid email and password on the customer sign-in screen. For the separate administrator preview at `/admin/login`, use `admin@eticket.sb` and any non-empty password.
 
 ## Supabase setup
 
@@ -51,7 +51,7 @@ set role = 'admin'
 where email = 'you@example.com';
 ```
 
-Sign in again and open `/admin`. Customers cannot promote themselves: the database protects role changes and all management operations with row-level security. In demo mode, any signed-in demo account can inspect the complete management workflow.
+Sign in through `/admin/login` to open `/admin`. Customers cannot promote themselves: the database protects role changes and all management operations with row-level security. The System Manager link is only returned to accounts whose profile role is `admin`.
 
 The browser uses Supabase only for authentication. All application data flows through `/api/events`, `/api/dashboard`, `/api/tickets`, and `/api/profile`; authenticated requests pass the current access token and remain subject to Supabase row-level security.
 

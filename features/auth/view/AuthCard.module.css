@@ -21,6 +21,7 @@
 .error { background: #ffebe6; color: #9e2d18; }
 .success { background: #eefdbb; color: #445500; }
 .demoNote { background: #f0eee8; color: #65635c; }
+.adminLink { margin-top:16px; color:#68665f; font-size:.68rem; text-decoration:none; }.adminLink strong { color:#566700; }
 .panelText { max-width: 290px; margin: 0 0 22px; color: #deded8; font-size: .84rem; line-height: 1.6; }
 .outlineButton { border: 1px solid #d6ff50; border-radius: 999px; padding: 10px 22px; color: #d6ff50; font-size: .72rem; font-weight: 800; text-decoration: none; }
 .outlineButton:hover { background: #d6ff50; color: #171714; }

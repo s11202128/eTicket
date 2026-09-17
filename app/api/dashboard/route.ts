@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (auth.demo) {
     const demoState = getDemoState();
     return Response.json({
-      profile: demoState.profile,
+      profile: { ...demoState.profile, role: auth.demoAdmin ? "admin" : "customer" },
       events: demoState.events
         .filter((event) => event.published && new Date(event.startsAt) >= new Date())
         .map(toPublicDemoEvent),

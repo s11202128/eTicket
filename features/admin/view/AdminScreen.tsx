@@ -99,7 +99,7 @@ export default function AdminScreen() {
   useEffect(() => {
     void (async () => {
       if (!await hasActiveSession()) {
-        router.replace("/login");
+        router.replace("/admin/login");
         return;
       }
       try {
@@ -107,7 +107,13 @@ export default function AdminScreen() {
         setEvents(snapshot.events);
         setOverview(snapshot.overview);
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Unable to open system management.");
+        const message = loadError instanceof Error ? loadError.message : "Unable to open system management.";
+        if (message === "Administrator access is required." || message.includes("session has expired")) {
+          await signOut();
+          router.replace("/admin/login");
+          return;
+        }
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -196,10 +202,6 @@ export default function AdminScreen() {
   };
 
   if (loading) return <main className={styles.loading}><span /><p>Synchronising command centre…</p></main>;
-
-  if (error === "Administrator access is required.") {
-    return <main className={styles.denied}><span>401 / ACCESS LAYER</span><h1>This workspace is for administrators.</h1><p>Your account is signed in, but it has not been assigned the admin role.</p><Link href="/dashboard">Return to dashboard</Link></main>;
-  }
 
   return (
     <main className={styles.shell}>

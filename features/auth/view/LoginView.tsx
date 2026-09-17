@@ -73,6 +73,7 @@ export function LoginView({
 
           {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
           {isDemoMode ? <p className={styles.demoNote}>Preview mode: use any email and password to enter.</p> : null}
+          <Link className={styles.adminLink} href="/admin/login">Platform administrator? <strong>Admin sign in →</strong></Link>
         </div>
 
         <aside className={styles.right}>
