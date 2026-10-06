@@ -8,8 +8,10 @@ export const siteConfig = {
   name: "E-Ticket",
   tagline: "Book concerts, sports, festivals and more in seconds.",
 
-  // ISO 4217 code used for every price on the site (and the footer note).
-  currency: { code: "USD", name: "US Dollars" },
+  // Every price on the site, the footer note and search-engine data use this.
+  // code: ISO 4217 code; symbol: shown before amounts (browsers have no
+  // symbol for SBD, so we set the local "SI$" ourselves).
+  currency: { code: "SBD", name: "Solomon Islands Dollars", symbol: "SI$" },
 
   // e.g. "support@yourdomain.com"
   contactEmail: "",

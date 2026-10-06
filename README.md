@@ -23,7 +23,7 @@ Copy `.env.example` to `.env.local` and fill it in:
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL (Project Settings → API) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Supabase publishable/anon key (safe for the browser) |
 | `NEXT_PUBLIC_SITE_URL` | yes in production | Public base URL, used for SEO links, the sitemap and social previews |
-| `SITE_TIME_ZONE` | no | Time zone for dates in social preview images, e.g. `Pacific/Port_Moresby` (default `UTC`). Everywhere else, dates show in each visitor's own time zone |
+| `SITE_TIME_ZONE` | no | Time zone for dates in social preview images, e.g. `Pacific/Guadalcanal` for Solomon Islands time (default `UTC`). Everywhere else, dates show in each visitor's own time zone |
 
 > Never add the Supabase **service_role** key to this app. Anything prefixed `NEXT_PUBLIC_` is sent to the browser, and the app doesn't need it.
 

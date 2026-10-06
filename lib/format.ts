@@ -16,10 +16,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
 });
 
 // Currency comes from lib/siteConfig.ts so prices and the footer note agree.
-const priceFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: siteConfig.currency.code,
+// Amounts get the configured symbol (e.g. "SI$1,250" or "SI$12.50").
+const amountFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 export function formatDate(iso: string): string {
@@ -31,7 +31,12 @@ export function formatDateTime(iso: string): string {
 }
 
 export function formatPrice(price: number): string {
-  return price === 0 ? "Free" : priceFormatter.format(price);
+  if (price === 0) return "Free";
+  // Show cents as 2 digits when present: SI$12.50, not SI$12.5.
+  const amount = Number.isInteger(price)
+    ? amountFormatter.format(price)
+    : amountFormatter.format(price).replace(/\.(\d)$/, ".$10");
+  return `${siteConfig.currency.symbol}${amount}`;
 }
 
 // Converts an ISO timestamp to the local-time value a datetime-local input expects.
