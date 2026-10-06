@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type {
   DashboardStat,
-  NextEvent,
-  RecentTicket,
+  DashboardViewName,
+  Event,
   SidebarItem,
-  UpcomingEvent,
+  Ticket,
+  UserProfile,
 } from "@/features/dashboard/model/dashboard.types";
 import { Sidebar } from "@/features/dashboard/view/components/layout/Sidebar";
 import { Topbar } from "@/features/dashboard/view/components/layout/Topbar";
@@ -13,20 +14,23 @@ import { StatCard } from "@/features/dashboard/view/components/dashboard/StatCar
 import { NextEventCard } from "@/features/dashboard/view/components/dashboard/NextEventCard";
 import { TicketCard } from "@/features/dashboard/view/components/tickets/TicketCard";
 import { EventCard } from "@/features/dashboard/view/components/events/EventCard";
+import {
+  matchesEventHorizon,
+  type EventHorizon,
+} from "@/features/dashboard/model/event-discovery";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
 
 type DashboardViewProps = {
-  appName: string;
-  userName: string;
-  userAvatar: string;
-  notifications: number;
+  activeView: DashboardViewName;
+  profile: UserProfile;
+  events: Event[];
+  tickets: Ticket[];
+  nextTicket: Ticket | null;
   sidebarItems: SidebarItem[];
-  lastUpdated: string;
   stats: DashboardStat[];
-  nextEvent: NextEvent | null;
-  recentTickets: RecentTicket[];
-  upcomingEvents: UpcomingEvent[];
+  updatedAt: string;
   isLoading: boolean;
+  actionId: string | null;
   error: string | null;
   notice: string | null;
   bookingEventId: string | null;
@@ -69,11 +73,9 @@ export function DashboardView({
   return (
     <main className={styles.page}>
       <div className={styles.layout}>
-        <Sidebar appName={appName} items={sidebarItems} />
-
+        <Sidebar appName="eTicket" items={sidebarItems} activeView={activeView} onLogout={onLogout} />
         <div className={styles.contentArea}>
-          <Topbar notifications={notifications} avatarUrl={userAvatar} />
-
+          <Topbar userName={profile.displayName || "Member"} avatarUrl={profile.avatarUrl} />
           <div className={styles.main}>
             <WelcomeBanner userName={userName} updatedAt={lastUpdated} />
 

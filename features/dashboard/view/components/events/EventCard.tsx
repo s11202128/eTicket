@@ -20,7 +20,8 @@ export function EventCard({ event, isBooking, onBook }: EventCardProps) {
         unoptimized
       />
       <h3>{event.title}</h3>
-      <p className={styles.subtle}>{event.date}</p>
+      <p className={styles.subtle}>{event.venue} · {event.location}</p>
+      <p className={styles.eventDescription}>{event.description}</p>
       <div className={styles.priceRow}>
         <strong>{event.price}</strong>
         <button

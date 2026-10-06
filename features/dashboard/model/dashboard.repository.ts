@@ -122,4 +122,6 @@ export async function fetchDashboardSnapshot(): Promise<DashboardSnapshot> {
     upcomingEvents,
     updatedAt: now.toISOString(),
   };
+  if (!response.ok) throw new Error(payload.error || "Unable to load events.");
+  return payload.events ?? [];
 }

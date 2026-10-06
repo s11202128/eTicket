@@ -1,0 +1,5 @@
+:root { color-scheme: light; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #f5f3ee; color: #1b1b19; font-family: Arial, Helvetica, sans-serif; }
+button, input { font: inherit; }
+::selection { background: #d6ff50; color: #171714; }

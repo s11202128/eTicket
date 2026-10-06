@@ -1,37 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# eTicket
 
-## Getting Started
+A Solomon Islands–based, full-stack event discovery and digital ticketing application for Pacific and international events, built with Next.js 16 and Supabase.
 
-First, run the development server:
+## Features
 
+- Public event discovery landing page
+- Supabase email authentication and password recovery
+- Authenticated overview, event catalogue, ticket wallet, and profile
+- Role-protected event management command centre at `/admin`
+- Event creation, editing, publishing, capacity monitoring, and safe deletion
+- Next.js API layer with bearer-token validation
+- Atomic ticket booking with capacity checks
+- Row-level security for profiles and tickets
+- Credential-free demo mode for local product previews
+- Per-event currencies including SBD and other regional or international currencies
+
+## Local development
+
+Install dependencies and start the app:
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For the complete local preview without a Supabase project:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+NEXT_PUBLIC_DEMO_MODE=true npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In demo mode, use any valid email and password on the customer sign-in screen. For the separate administrator preview at `/admin/login`, use `admin@eticket.sb` and any non-empty password.
 
-## Learn More
+## Supabase setup
 
-To learn more about Next.js, take a look at the following resources:
+Create `.env.local`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Run the SQL files in `supabase/migrations/` in filename order. They create the event catalogue, ticket wallet, seed events, security policies, atomic booking, multi-currency support, and administrator controls.
 
-## Deploy on Vercel
+After signing up the account that will manage the platform, promote it once from the Supabase SQL editor. Replace the email with the account you created:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'you@example.com';
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Sign in through `/admin/login` to open `/admin`. Customers cannot promote themselves: the database protects role changes and all management operations with row-level security. The System Manager link is only returned to accounts whose profile role is `admin`.
+
+The browser uses Supabase only for authentication. All application data flows through `/api/events`, `/api/dashboard`, `/api/tickets`, and `/api/profile`; authenticated requests pass the current access token and remain subject to Supabase row-level security.
+
+## Validation
+
+```bash
+npm run lint
+npm run build
+```

@@ -4,6 +4,7 @@ export type LoginCredentials = {
 };
 
 export type SignupCredentials = {
+  fullName: string;
   email: string;
   password: string;
 };

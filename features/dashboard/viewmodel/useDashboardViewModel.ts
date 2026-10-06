@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchDashboardSnapshot } from "@/features/dashboard/model/dashboard.repository";
+import { hasActiveSession, signOut } from "@/features/auth/model/session.repository";
 import {
   getCurrentUserProfile,
   hasActiveSession,
@@ -11,10 +11,11 @@ import { bookTicket } from "@/features/tickets/model/tickets.repository";
 import type {
   DashboardSnapshot,
   DashboardStat,
-  NextEvent,
-  RecentTicket,
+  DashboardViewName,
+  Event,
   SidebarItem,
-  UpcomingEvent,
+  Ticket,
+  UserProfile,
 } from "@/features/dashboard/model/dashboard.types";
 
 type DashboardViewModel = {
@@ -63,22 +64,32 @@ async function loadSnapshot(): Promise<DashboardSnapshot> {
 
 export function useDashboardViewModel(): DashboardViewModel {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<DashboardSnapshot>(EMPTY_SNAPSHOT);
+  const [snapshot, setSnapshot] = useState<DashboardSnapshot>({
+    profile: EMPTY_PROFILE,
+    events: [],
+    tickets: [],
+    updatedAt: "",
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [actionId, setActionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [bookingEventId, setBookingEventId] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    void loadDashboard();
+  }, [loadDashboard]);
 
-    const loadDashboard = async () => {
-      try {
-        const isAuthenticated = await hasActiveSession();
-        if (!isAuthenticated) {
-          router.replace("/login");
-          return;
-        }
+  const sidebarItems: SidebarItem[] = [
+    { id: "dashboard", label: "Overview", href: "/dashboard", icon: "dashboard" },
+    { id: "events", label: "Discover events", href: "/events", icon: "event" },
+    { id: "tickets", label: "My tickets", href: "/tickets", icon: "ticket" },
+    { id: "profile", label: "Profile", href: "/profile", icon: "profile" },
+    ...(snapshot.profile.role === "admin"
+      ? [{ id: "admin" as const, label: "System manager", href: "/admin", icon: "admin" as const }]
+      : []),
+    { id: "logout", label: "Sign out", href: "/login", icon: "logout" },
+  ];
 
         const data = await loadSnapshot();
 
@@ -95,12 +106,29 @@ export function useDashboardViewModel(): DashboardViewModel {
       }
     };
 
-    loadDashboard();
+  const onProfileSave = async (displayName: string, phone: string) => {
+    setActionId("profile");
+    setError(null);
+    setNotice(null);
+    try {
+      await updateProfile({ displayName, phone });
+      setSnapshot((current) => ({
+        ...current,
+        profile: { ...current.profile, displayName, phone },
+      }));
+      setNotice("Profile updated successfully.");
+    } catch (profileError) {
+      setError(profileError instanceof Error ? profileError.message : "Unable to save your profile.");
+    } finally {
+      setActionId(null);
+    }
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [router]);
+  const onLogout = async () => {
+    await signOut();
+    router.replace("/login");
+    router.refresh();
+  };
 
   const onBookTicket = useCallback(
     async (eventId: string) => {
@@ -133,7 +161,16 @@ export function useDashboardViewModel(): DashboardViewModel {
   }, [snapshot.updatedAt]);
 
   return {
+    activeView,
+    profile: snapshot.profile,
+    events: snapshot.events,
+    tickets: snapshot.tickets,
+    nextTicket,
+    sidebarItems,
+    stats,
+    updatedAt: snapshot.updatedAt,
     isLoading,
+    actionId,
     error,
     notice,
     appName: snapshot.appName,

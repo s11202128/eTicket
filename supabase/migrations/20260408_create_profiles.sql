@@ -3,6 +3,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   full_name text,
+  phone text,
   avatar_url text,
   role text not null default 'user',
   created_at timestamptz not null default timezone('utc', now()),
