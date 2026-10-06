@@ -57,7 +57,7 @@ export type DashboardData = {
   notifications: number;
   sidebarItems: SidebarItem[];
   stats: DashboardStat[];
-  nextEvent: NextEvent;
+  nextEvent: NextEvent | null;
   recentTickets: RecentTicket[];
   upcomingEvents: UpcomingEvent[];
 };

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type {
   DashboardStat,
   NextEvent,
@@ -27,6 +28,9 @@ type DashboardViewProps = {
   upcomingEvents: UpcomingEvent[];
   isLoading: boolean;
   error: string | null;
+  notice: string | null;
+  bookingEventId: string | null;
+  onBookTicket: (eventId: string) => Promise<void>;
 };
 
 export function DashboardView({
@@ -42,6 +46,9 @@ export function DashboardView({
   upcomingEvents,
   isLoading,
   error,
+  notice,
+  bookingEventId,
+  onBookTicket,
 }: DashboardViewProps) {
   if (isLoading) {
     return (
@@ -70,6 +77,8 @@ export function DashboardView({
           <div className={styles.main}>
             <WelcomeBanner userName={userName} updatedAt={lastUpdated} />
 
+            {notice ? <p className={styles.subtle}>{notice}</p> : null}
+
             <section className={styles.statsGrid}>
               {stats.map((stat) => (
                 <StatCard key={stat.id} stat={stat} />
@@ -84,6 +93,9 @@ export function DashboardView({
                 {recentTickets.map((ticket) => (
                   <TicketCard key={ticket.id} ticket={ticket} />
                 ))}
+                {recentTickets.length === 0 ? (
+                  <p className={styles.subtle}>No tickets yet. Book one from Upcoming Events.</p>
+                ) : null}
               </div>
             </section>
 
@@ -91,8 +103,18 @@ export function DashboardView({
               <h2 className={styles.sectionTitle}>Upcoming Events</h2>
               <div className={styles.eventGrid}>
                 {upcomingEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    isBooking={bookingEventId === event.id}
+                    onBook={onBookTicket}
+                  />
                 ))}
+                {upcomingEvents.length === 0 ? (
+                  <p className={styles.subtle}>
+                    No upcoming events. <Link href="/events/new">Create one</Link>.
+                  </p>
+                ) : null}
               </div>
             </section>
           </div>

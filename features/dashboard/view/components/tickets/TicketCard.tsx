@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { RecentTicket } from "@/features/dashboard/model/dashboard.types";
 import { TicketActions } from "@/features/dashboard/view/components/tickets/TicketActions";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
@@ -21,7 +22,13 @@ export function TicketCard({ ticket }: TicketCardProps) {
         </span>
       </div>
 
-      <img src={ticket.qrImageUrl} alt={`${ticket.eventTitle} QR`} className={styles.qrImage} />
+      <Image
+        src={ticket.qrImageUrl}
+        alt={`${ticket.eventTitle} QR`}
+        width={92}
+        height={92}
+        className={styles.qrImage}
+      />
 
       <TicketActions />
     </article>

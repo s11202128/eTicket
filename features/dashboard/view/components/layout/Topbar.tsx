@@ -1,3 +1,4 @@
+import Image from "next/image";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
 
 type TopbarProps = {
@@ -12,7 +13,18 @@ export function Topbar({ notifications, avatarUrl }: TopbarProps) {
         🔔
         {notifications > 0 ? <span className={styles.notifyDot} /> : null}
       </button>
-      <img src={avatarUrl} alt="Profile" className={styles.avatar} />
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt="Profile"
+          width={40}
+          height={40}
+          className={styles.avatar}
+          unoptimized
+        />
+      ) : (
+        <span className={styles.avatar} aria-label="Profile" />
+      )}
     </header>
   );
 }
