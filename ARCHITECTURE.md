@@ -62,3 +62,9 @@ with row-level security and functions, so the client is never trusted:
   (each user writes their own folder); all publicly readable.
 
 After a migration, regenerate `lib/database.types.ts` (see the note at its top).
+
+## Tests and error handling
+
+- Database tests (pgTAP): `supabase/tests/database/` (see README for how to run).
+- Every public route and the admin area have `loading.tsx` skeletons and `error.tsx` boundaries (`components/ui/RouteError.tsx`); `app/global-error.tsx` covers root-layout failures and `app/not-found.tsx` unknown URLs.
+- SEO: per-event metadata, Open Graph image (`events/[slug]/opengraph-image.tsx`), schema.org Event JSON-LD, `robots.ts` and `sitemap.ts`.

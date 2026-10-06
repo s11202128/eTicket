@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { EventStatus } from "@/lib/database.types";
 import { ilikePattern, sanitizeSearch } from "@/lib/search";
@@ -164,8 +165,9 @@ export async function listPublicEvents(filters: EventListFilters): Promise<{ eve
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// By slug; old links used the event id, so ids resolve too.
-export async function getPublicEvent(slugOrId: string): Promise<PublicEvent | null> {
+// By slug; old links used the event id, so ids resolve too. cache() shares
+// one lookup per request between metadata, the page and the OG image.
+export const getPublicEvent = cache(async (slugOrId: string): Promise<PublicEvent | null> => {
   const supabase = await createSupabaseServerClient();
   const column = UUID.test(slugOrId) ? "id" : "slug";
   const { data, error } = await supabase.from("events").select(EVENT_SELECT).eq(column, slugOrId).maybeSingle();
@@ -173,4 +175,4 @@ export async function getPublicEvent(slugOrId: string): Promise<PublicEvent | nu
   if (!data) return null;
   const [event] = await withCounts(supabase, [data as EventRow]);
   return event;
-}
+});
