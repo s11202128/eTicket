@@ -1,3 +1,5 @@
+import { siteConfig } from "@/lib/siteConfig";
+
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
   month: "short",
@@ -13,9 +15,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
 });
 
+// Currency comes from lib/siteConfig.ts so prices and the footer note agree.
 const priceFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: siteConfig.currency.code,
   minimumFractionDigits: 0,
 });
 

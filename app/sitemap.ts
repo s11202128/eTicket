@@ -13,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
     { url: `${base}/events`, changeFrequency: "daily", priority: 0.9 },
+    ...["/about", "/contact", "/terms", "/privacy", "/refunds"].map((path) => ({
+      url: `${base}${path}`,
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    })),
   ];
 
   const supabase = createClient<Database>(

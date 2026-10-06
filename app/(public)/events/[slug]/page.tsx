@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getViewer } from "@/lib/supabase/server";
 import { excerpt, formatInSiteZone, siteUrl } from "@/lib/site";
+import { siteConfig } from "@/lib/siteConfig";
 import { getPublicEvent } from "@/features/events/model/publicEvents.server";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
@@ -49,7 +50,7 @@ function eventJsonLd(event: PublicEvent): string {
     offers: {
       "@type": "Offer",
       price: event.price,
-      priceCurrency: "USD",
+      priceCurrency: siteConfig.currency.code,
       availability: event.isSoldOut ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
       url: `${siteUrl()}/events/${event.slug}`,
     },

@@ -9,6 +9,7 @@ import { Field, Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { FALLBACK_EVENT_IMAGE } from "@/lib/storage";
+import { siteConfig } from "@/lib/siteConfig";
 import { ErrorState, PageHeader } from "@/features/admin/view/AdminUi";
 import { EventStatusBadge } from "@/features/admin/view/StatusBadges";
 import { useEventEditor } from "@/features/admin/viewmodel/useEventEditor";
@@ -126,7 +127,7 @@ export default function EventEditorScreen() {
 
           <Card className="grid gap-4 sm:grid-cols-3">
             <CardTitle className="sm:col-span-3">Tickets</CardTitle>
-            <Field label="Price (USD)" required hint="0 = free" error={errors.price}>
+            <Field label={`Price (${siteConfig.currency.code})`} required hint="0 = free" error={errors.price}>
               {(props) => (
                 <Input {...props} type="number" min="0" step="0.01" inputMode="decimal" value={values.price} onChange={(event) => vm.setField("price", event.target.value)} />
               )}
