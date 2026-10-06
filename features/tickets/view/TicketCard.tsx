@@ -1,10 +1,10 @@
 import Image from "next/image";
-import type { RecentTicket } from "@/features/dashboard/model/dashboard.types";
-import { TicketActions } from "@/features/dashboard/view/components/tickets/TicketActions";
+import type { TicketSummary } from "@/features/tickets/model/tickets.types";
+import { TicketActions } from "@/features/tickets/view/TicketActions";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
 
 type TicketCardProps = {
-  ticket: RecentTicket;
+  ticket: TicketSummary;
 };
 
 export function TicketCard({ ticket }: TicketCardProps) {
@@ -30,7 +30,7 @@ export function TicketCard({ ticket }: TicketCardProps) {
         className={styles.qrImage}
       />
 
-      <TicketActions />
+      <TicketActions ticket={ticket} />
     </article>
   );
 }

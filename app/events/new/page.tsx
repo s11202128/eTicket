@@ -1,5 +1,5 @@
-import CreateEventScreen from "@/features/events/view/CreateEventScreen";
+import EventFormScreen from "@/features/events/view/EventFormScreen";
 
 export default function CreateEventPage() {
-  return <CreateEventScreen />;
+  return <EventFormScreen />;
 }

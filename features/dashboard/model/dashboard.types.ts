@@ -1,19 +1,6 @@
-export type IconName =
-  | "dashboard"
-  | "ticket"
-  | "event"
-  | "profile"
-  | "logout"
-  | "calendar"
-  | "clock";
-
-export type SidebarItem = {
-  id: string;
-  label: string;
-  href: string;
-  icon: IconName;
-  active?: boolean;
-};
+import type { EventSummary } from "@/features/events/model/events.types";
+import type { IconName } from "@/features/shell/model/navigation";
+import type { TicketSummary } from "@/features/tickets/model/tickets.types";
 
 export type DashboardStat = {
   id: string;
@@ -24,6 +11,7 @@ export type DashboardStat = {
 };
 
 export type NextEvent = {
+  id: string;
   title: string;
   dateTime: string;
   location: string;
@@ -31,35 +19,11 @@ export type NextEvent = {
   ctaLabel: string;
 };
 
-export type TicketStatus = "Active" | "Used";
-
-export type RecentTicket = {
-  id: string;
-  eventTitle: string;
-  date: string;
-  location: string;
-  status: TicketStatus;
-  qrImageUrl: string;
-};
-
-export type UpcomingEvent = {
-  id: string;
-  title: string;
-  date: string;
-  price: string;
-  imageUrl: string;
-};
-
 export type DashboardData = {
-  appName: string;
-  userName: string;
-  userAvatar: string;
-  notifications: number;
-  sidebarItems: SidebarItem[];
   stats: DashboardStat[];
   nextEvent: NextEvent | null;
-  recentTickets: RecentTicket[];
-  upcomingEvents: UpcomingEvent[];
+  recentTickets: TicketSummary[];
+  upcomingEvents: EventSummary[];
 };
 
 export type DashboardSnapshot = DashboardData & {

@@ -20,6 +20,7 @@ export type Database = {
     Tables: {
       events: {
         Row: {
+          capacity: number | null
           created_at: string
           created_by: string
           description: string | null
@@ -32,6 +33,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -130,7 +133,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_event_booked_counts: {
+        Args: { event_ids: string[] }
+        Returns: {
+          booked: number
+          event_id: string
+        }[]
+      }
+      redeem_ticket: {
+        Args: { ticket_code: string }
+        Returns: {
+          event_title: string
+          holder_email: string
+          ticket_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

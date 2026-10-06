@@ -62,3 +62,29 @@ export async function requestPasswordReset(
 
   return { ok: true };
 }
+
+export async function updatePassword(password: string): Promise<AuthResult> {
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return {
+      ok: false,
+      errorMessage: error.message,
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function signOut(): Promise<AuthResult> {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    return {
+      ok: false,
+      errorMessage: error.message,
+    };
+  }
+
+  return { ok: true };
+}

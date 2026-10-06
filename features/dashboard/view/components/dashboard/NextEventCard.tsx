@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { NextEvent } from "@/features/dashboard/model/dashboard.types";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
 
@@ -14,9 +15,9 @@ export function NextEventCard({ event }: NextEventCardProps) {
         <p className={styles.eventMeta}>
           {event.dateTime} | {event.location}
         </p>
-        <button className={styles.lightButton} type="button">
+        <Link className={styles.lightButton} href={`/events/${event.id}`}>
           {event.ctaLabel}
-        </button>
+        </Link>
       </div>
     </section>
   );

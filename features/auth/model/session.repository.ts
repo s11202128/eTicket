@@ -15,6 +15,16 @@ export async function hasActiveSession(): Promise<boolean> {
   return Boolean(data.session);
 }
 
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error || !data.session) {
+    return null;
+  }
+
+  return data.session.user.id;
+}
+
 function normalizeDisplayName(rawName: string): string {
   return rawName
     .trim()

@@ -12,10 +12,31 @@ This project now uses MVVM for feature modules.
 
 ## Current implementation
 
-- Dashboard route entry: `app/dashboard/page.tsx`
-- Dashboard Model: `features/dashboard/model/`
-- Dashboard ViewModel: `features/dashboard/viewmodel/useDashboardViewModel.ts`
-- Dashboard View: `features/dashboard/view/`
+| Feature | Routes | Notes |
+| --- | --- | --- |
+| `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout` | Supabase email + password auth |
+| `shell` | — | `AppShell` wraps signed-in pages: sidebar, top bar, session guard |
+| `dashboard` | `/dashboard` | Stats, next event, recent tickets, upcoming events |
+| `events` | `/events`, `/events/new`, `/events/[id]`, `/events/[id]/edit` | Browse, create, edit, delete events |
+| `tickets` | `/tickets`, `/tickets/[id]`, `/check-in` | Book, view, cancel, share tickets; organizer check-in |
+| `profile` | `/profile` | Edit name and avatar |
+
+Shared: `lib/supabase.ts` (typed client), `lib/database.types.ts` (generated
+schema types), `lib/format.ts` (date/price formatting).
+
+## Database
+
+Schema lives in `supabase/migrations/`. Access rules are enforced in Postgres
+with row-level security, so the client never needs to be trusted:
+
+- `profiles`: users read their own row and may update only `full_name` and `avatar_url`.
+- `events`: public read; creators insert, update and delete their own.
+- `tickets`: users read and book their own, and may only change status to `cancelled`.
+  A trigger blocks bookings for past or full events (`events.capacity`).
+- `get_event_booked_counts(event_ids)`: seat counts for everyone.
+- `redeem_ticket(ticket_code)`: lets an event's organizer mark a ticket as used.
+
+After a migration, regenerate `lib/database.types.ts`.
 
 ## Rules
 

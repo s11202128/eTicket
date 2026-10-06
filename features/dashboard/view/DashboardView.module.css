@@ -319,3 +319,28 @@
     height: auto;
   }
 }
+
+a.notify {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+a.lightButton {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.cardLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.bookBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
