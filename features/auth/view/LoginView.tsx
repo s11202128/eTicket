@@ -1,5 +1,7 @@
 import Link from "next/link";
-import styles from "@/features/auth/view/AuthCard.module.css";
+import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import { AuthPanel, FormMessage } from "@/features/auth/view/AuthPanel";
 
 type LoginViewProps = {
   email: string;
@@ -7,6 +9,7 @@ type LoginViewProps = {
   isSubmitting: boolean;
   error: string | null;
   isFormValid: boolean;
+  signupHref: string;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => Promise<void>;
@@ -18,62 +21,56 @@ export function LoginView({
   isSubmitting,
   error,
   isFormValid,
+  signupHref,
   onEmailChange,
   onPasswordChange,
   onSubmit,
 }: LoginViewProps) {
   return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        <div className={styles.left}>
-          <h1 className={styles.title}>Welcome</h1>
-
-          <form
-            className={styles.form}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onSubmit();
-            }}
-          >
-            <input
-              className={styles.input}
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-            />
-
-            <input
-              className={styles.input}
-              id="password"
+    <AuthPanel
+      title="Welcome back"
+      subtitle="Log in to book events and see your tickets."
+      footer={
+        <>
+          New here?{" "}
+          <Link href={signupHref} className="font-semibold text-accent-text hover:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form
+        noValidate
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onSubmit();
+        }}
+      >
+        <Field label="Email">
+          {(props) => (
+            <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+          )}
+        </Field>
+        <Field label="Password">
+          {(props) => (
+            <Input
+              {...props}
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
-              placeholder="Password"
-              autoComplete="current-password"
             />
-
-            <Link className={styles.forgot} href="/forgot-password">
-              Forgot password?
-            </Link>
-
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
-            </button>
-          </form>
-
-          {error ? <p className={styles.error}>{error}</p> : null}
-        </div>
-
-        <aside className={styles.right}>
-          <p className={styles.panelText}>Don&apos;t have an account? Please Sign up!</p>
-          <Link className={styles.outlineButton} href="/signup">
-            SIGN UP
-          </Link>
-        </aside>
-      </section>
-    </main>
+          )}
+        </Field>
+        <Link href="/forgot-password" className="justify-self-end text-sm font-semibold text-accent-text hover:underline">
+          Forgot password?
+        </Link>
+        {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+        <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
+          Log in
+        </Button>
+      </form>
+    </AuthPanel>
   );
 }

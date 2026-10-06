@@ -1,5 +1,7 @@
 import Link from "next/link";
-import styles from "@/features/auth/view/AuthCard.module.css";
+import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import { AuthPanel, FormMessage } from "@/features/auth/view/AuthPanel";
 
 type SignupViewProps = {
   email: string;
@@ -9,6 +11,7 @@ type SignupViewProps = {
   error: string | null;
   successMessage: string | null;
   isFormValid: boolean;
+  loginHref: string;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -23,66 +26,69 @@ export function SignupView({
   error,
   successMessage,
   isFormValid,
+  loginHref,
   onEmailChange,
   onPasswordChange,
   onConfirmPasswordChange,
   onSubmit,
 }: SignupViewProps) {
   return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        <div className={styles.left}>
-          <h1 className={styles.title}>Create Account</h1>
-          <form
-            className={styles.form}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onSubmit();
-            }}
-          >
-            <input
-              className={styles.input}
-              id="signup-email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-            />
-            <input
-              className={styles.input}
-              id="signup-password"
-              type="password"
-              value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-              placeholder="Password"
-              autoComplete="new-password"
-            />
-            <input
-              className={styles.input}
-              id="signup-confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => onConfirmPasswordChange(event.target.value)}
-              placeholder="Confirm Password"
-              autoComplete="new-password"
-            />
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "CREATING..." : "SIGN UP"}
-            </button>
-          </form>
-
-          {error ? <p className={styles.error}>{error}</p> : null}
-          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
-        </div>
-
-        <aside className={styles.right}>
-          <p className={styles.panelText}>Already have an account? Please Sign in!</p>
-          <Link className={styles.outlineButton} href="/login">
-            SIGN IN
+    <AuthPanel
+      title="Create your account"
+      subtitle="Book tickets in seconds and keep them all in one place."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link href={loginHref} className="font-semibold text-accent-text hover:underline">
+            Log in
           </Link>
-        </aside>
-      </section>
-    </main>
+        </>
+      }
+    >
+      {successMessage ? (
+        <FormMessage tone="success">{successMessage}</FormMessage>
+      ) : (
+        <form
+          noValidate
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSubmit();
+          }}
+        >
+          <Field label="Email">
+            {(props) => (
+              <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+            )}
+          </Field>
+          <Field label="Password" hint="At least 6 characters.">
+            {(props) => (
+              <Input
+                {...props}
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => onPasswordChange(event.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Confirm password">
+            {(props) => (
+              <Input
+                {...props}
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => onConfirmPasswordChange(event.target.value)}
+              />
+            )}
+          </Field>
+          {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+          <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
+            Sign up
+          </Button>
+        </form>
+      )}
+    </AuthPanel>
   );
 }

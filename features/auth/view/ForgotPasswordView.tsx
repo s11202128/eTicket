@@ -1,5 +1,7 @@
 import Link from "next/link";
-import styles from "@/features/auth/view/AuthCard.module.css";
+import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import { AuthPanel, FormMessage } from "@/features/auth/view/AuthPanel";
 
 type ForgotPasswordViewProps = {
   email: string;
@@ -21,44 +23,37 @@ export function ForgotPasswordView({
   onSubmit,
 }: ForgotPasswordViewProps) {
   return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        <div className={styles.left}>
-          <h1 className={styles.title}>Reset Password</h1>
-
-          <form
-            className={styles.form}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onSubmit();
-            }}
-          >
-            <input
-              className={styles.input}
-              id="reset-email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-            />
-
-            <button className={styles.primaryButton} type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "SENDING..." : "SEND RESET LINK"}
-            </button>
-          </form>
-
-          {error ? <p className={styles.error}>{error}</p> : null}
-          {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
-        </div>
-
-        <aside className={styles.right}>
-          <p className={styles.panelText}>Remembered your password? Go back and sign in.</p>
-          <Link className={styles.outlineButton} href="/login">
-            SIGN IN
-          </Link>
-        </aside>
-      </section>
-    </main>
+    <AuthPanel
+      title="Reset your password"
+      subtitle="We'll email you a link to choose a new one."
+      footer={
+        <Link href="/login" className="font-semibold text-accent-text hover:underline">
+          Back to log in
+        </Link>
+      }
+    >
+      {successMessage ? (
+        <FormMessage tone="success">{successMessage}</FormMessage>
+      ) : (
+        <form
+          noValidate
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSubmit();
+          }}
+        >
+          <Field label="Email">
+            {(props) => (
+              <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+            )}
+          </Field>
+          {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+          <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
+            Send reset link
+          </Button>
+        </form>
+      )}
+    </AuthPanel>
   );
 }

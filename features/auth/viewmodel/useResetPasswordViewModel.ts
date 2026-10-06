@@ -67,8 +67,9 @@ export function useResetPasswordViewModel(): ResetPasswordViewModel {
         return;
       }
 
-      setSuccessMessage("Password updated. Taking you to your dashboard...");
-      router.push("/dashboard");
+      setSuccessMessage("Password updated. Taking you to your tickets…");
+      router.push("/tickets");
+      router.refresh();
     } catch {
       setError("Could not update your password.");
     } finally {

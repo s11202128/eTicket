@@ -25,7 +25,8 @@ export async function signInWithEmail(
 }
 
 export async function signUpWithEmail(
-  credentials: SignupCredentials
+  credentials: SignupCredentials,
+  next = "/"
 ): Promise<SignupResult> {
   const { data, error } = await supabase.auth.signUp({
     email: credentials.email,
@@ -33,7 +34,9 @@ export async function signUpWithEmail(
     options: {
       // The confirmation link signs the user in through /auth/callback.
       emailRedirectTo:
-        typeof window !== "undefined" ? `${window.location.origin}/auth/callback?next=/` : undefined,
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+          : undefined,
     },
   });
 

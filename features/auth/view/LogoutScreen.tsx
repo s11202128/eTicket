@@ -3,22 +3,22 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/features/auth/model/auth.repository";
-import styles from "@/features/auth/view/AuthCard.module.css";
 
 export default function LogoutScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // Go to login whether or not sign-out succeeds; a failed call still
-    // clears the local session.
-    signOut().finally(() => {
-      router.replace("/login");
+    // Head home whether or not the server call succeeds: signOut() always
+    // clears the local session cookies.
+    void signOut().finally(() => {
+      router.replace("/?notice=signed-out");
+      router.refresh();
     });
   }, [router]);
 
   return (
-    <main className={styles.page}>
-      <p>Signing you out...</p>
-    </main>
+    <p role="status" className="px-4 py-20 text-center text-muted">
+      Signing you out…
+    </p>
   );
 }

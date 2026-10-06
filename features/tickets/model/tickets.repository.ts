@@ -1,76 +1,103 @@
 import { supabase } from "@/lib/supabase";
-import { formatDate, formatDateTime } from "@/lib/format";
-import type { CheckInResult } from "@/lib/database.types";
+import type { CheckInResult, EventStatus, TicketDbStatus } from "@/lib/database.types";
+import { eventImageSrc } from "@/lib/storage";
 import type {
+  BookResult,
   CheckInOutcome,
+  TicketPhase,
   TicketResult,
-  TicketStatus,
-  TicketSummary,
-  TicketWithEvent,
+  TicketView,
 } from "@/features/tickets/model/tickets.types";
 
-const TICKET_SELECT = "*, events(id, title, starts_at, location)";
+const TICKET_SELECT =
+  "id, code, status, created_at, checked_in_at, cancelled_at, events(id, slug, title, starts_at, end_at, location, image_path, image_url, status)";
 
-export function ticketQrUrl(code: string, size = 120): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-    `ETICKET-${code}`
-  )}`;
-}
+// Without an end time an event counts as running for 6 hours.
+const DEFAULT_DURATION_MS = 6 * 60 * 60 * 1000;
 
-function toTicketStatus(ticket: TicketWithEvent, now: Date): TicketStatus {
-  if (ticket.status === "used") return "Used";
-  if (ticket.status === "cancelled") return "Cancelled";
-  if (ticket.events && new Date(ticket.events.starts_at) < now) return "Expired";
-  return "Active";
-}
+type TicketRecord = {
+  id: string;
+  code: string;
+  status: string;
+  created_at: string;
+  checked_in_at: string | null;
+  cancelled_at: string | null;
+  events: {
+    id: string;
+    slug: string;
+    title: string;
+    starts_at: string;
+    end_at: string | null;
+    location: string;
+    image_path: string | null;
+    image_url: string | null;
+    status: string;
+  } | null;
+};
 
-export function toTicketSummary(ticket: TicketWithEvent, now = new Date()): TicketSummary {
+function toView(record: TicketRecord, now = Date.now()): TicketView {
+  const status = record.status as TicketDbStatus;
+  const event = record.events;
+  const startsAt = event ? new Date(event.starts_at).getTime() : 0;
+  const endsAt = event ? (event.end_at ? new Date(event.end_at).getTime() : startsAt + DEFAULT_DURATION_MS) : 0;
+
+  let phase: TicketPhase;
+  if (status === "used") phase = "used";
+  else if (status === "cancelled") phase = "cancelled";
+  else phase = event && endsAt > now ? "upcoming" : "past";
+
   return {
-    id: ticket.id,
-    eventId: ticket.events?.id ?? null,
-    eventTitle: ticket.events?.title ?? "Event removed",
-    date: ticket.events ? formatDate(ticket.events.starts_at) : "",
-    dateTime: ticket.events ? formatDateTime(ticket.events.starts_at) : "",
-    location: ticket.events?.location ?? "",
-    status: toTicketStatus(ticket, now),
-    code: ticket.code,
-    qrImageUrl: ticketQrUrl(ticket.code),
+    id: record.id,
+    code: record.code,
+    status,
+    phase,
+    createdAt: record.created_at,
+    checkedInAt: record.checked_in_at,
+    cancelledAt: record.cancelled_at,
+    event: event
+      ? {
+          id: event.id,
+          slug: event.slug,
+          title: event.title,
+          startsAt: event.starts_at,
+          endAt: event.end_at,
+          location: event.location,
+          imageSrc: eventImageSrc(event.image_path, event.image_url),
+          status: event.status as EventStatus,
+        }
+      : null,
+    // Matches cancel_my_ticket: active and the event hasn't started.
+    canCancel: status === "active" && Boolean(event) && startsAt > now,
   };
 }
 
-export async function bookTicket(eventId: string): Promise<TicketResult> {
-  // The database function checks sign-in, availability, capacity and the
-  // per-user limit, then creates the ticket and a confirmation notification.
-  const { error } = await supabase.rpc("book_ticket", { p_event_id: eventId });
+async function requireUserId(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (!userId) throw new Error("Please sign in.");
+  return userId;
+}
 
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
-  return { ok: true };
+export async function bookTicket(eventId: string): Promise<BookResult> {
+  // The database checks sign-in, availability, capacity and the per-person
+  // limit, then creates the ticket and a confirmation notification.
+  const { data, error } = await supabase.rpc("book_ticket", { p_event_id: eventId });
+  if (error) return { ok: false, errorMessage: error.message };
+  return { ok: true, code: data.code };
 }
 
 export async function cancelTicket(ticketId: string): Promise<TicketResult> {
   const { error } = await supabase.rpc("cancel_my_ticket", { p_ticket_id: ticketId });
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
+  if (error) return { ok: false, errorMessage: error.message };
   return { ok: true };
 }
 
 export async function checkInTicket(code: string): Promise<CheckInOutcome> {
   const { data, error } = await supabase.rpc("check_in_ticket", { p_code: code });
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
+  if (error) return { ok: false, errorMessage: error.message };
 
   const [row] = data;
-  if (!row) {
-    return { ok: false, errorMessage: "Check-in failed. Please try again." };
-  }
+  if (!row) return { ok: false, errorMessage: "Check-in failed. Please try again." };
 
   return {
     ok: true,
@@ -82,43 +109,27 @@ export async function checkInTicket(code: string): Promise<CheckInOutcome> {
   };
 }
 
-async function requireUserId(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user.id;
-  if (!userId) {
-    throw new Error("Not signed in.");
-  }
-  return userId;
-}
-
-// Filter by user explicitly: admins can read every ticket.
-export async function listMyTickets(): Promise<TicketWithEvent[]> {
+// Always filtered by user: admins can read every ticket.
+export async function listMyTickets(): Promise<TicketView[]> {
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from("tickets")
     .select(TICKET_SELECT)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  if (error) throw new Error(error.message);
+  const now = Date.now();
+  return (data as unknown as TicketRecord[]).map((record) => toView(record, now));
 }
 
-export async function getMyTicket(ticketId: string): Promise<TicketWithEvent | null> {
+export async function getMyTicketByCode(code: string): Promise<TicketView | null> {
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from("tickets")
     .select(TICKET_SELECT)
-    .eq("id", ticketId)
+    .eq("code", code.toUpperCase())
     .eq("user_id", userId)
     .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  if (error) throw new Error(error.message);
+  return data ? toView(data as unknown as TicketRecord) : null;
 }

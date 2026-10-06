@@ -1,13 +1,11 @@
-import type { CheckInResult, Tables } from "@/lib/database.types";
-
-export type TicketWithEvent = Tables<"tickets"> & {
-  events: Pick<Tables<"events">, "id" | "title" | "starts_at" | "location"> | null;
-};
+import type { CheckInResult, EventStatus, TicketDbStatus } from "@/lib/database.types";
 
 export type TicketResult = {
   ok: boolean;
   errorMessage?: string;
 };
+
+export type BookResult = TicketResult & { code?: string };
 
 export type CheckInOutcome = TicketResult & {
   result?: CheckInResult;
@@ -17,18 +15,28 @@ export type CheckInOutcome = TicketResult & {
   checkedInAt?: string | null;
 };
 
-// "Expired" means still active in the database but the event has passed.
-export type TicketStatus = "Active" | "Used" | "Cancelled" | "Expired";
+// "upcoming": active and the event hasn't finished; "past": active but over.
+export type TicketPhase = "upcoming" | "used" | "cancelled" | "past";
 
-// Display-ready ticket for cards and lists.
-export type TicketSummary = {
+export type TicketEvent = {
   id: string;
-  eventId: string | null;
-  eventTitle: string;
-  date: string;
-  dateTime: string;
+  slug: string;
+  title: string;
+  startsAt: string;
+  endAt: string | null;
   location: string;
-  status: TicketStatus;
+  imageSrc: string;
+  status: EventStatus;
+};
+
+export type TicketView = {
+  id: string;
   code: string;
-  qrImageUrl: string;
+  status: TicketDbStatus;
+  phase: TicketPhase;
+  createdAt: string;
+  checkedInAt: string | null;
+  cancelledAt: string | null;
+  event: TicketEvent | null;
+  canCancel: boolean;
 };

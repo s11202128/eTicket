@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { signUpWithEmail } from "@/features/auth/model/auth.repository";
+import { safeNextPath } from "@/lib/safeRedirect";
 import type { SignupCredentials } from "@/features/auth/model/auth.types";
 
 type SignupViewModel = {
@@ -12,6 +13,7 @@ type SignupViewModel = {
   error: string | null;
   successMessage: string | null;
   isFormValid: boolean;
+  loginHref: string;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -25,6 +27,12 @@ export function useSignupViewModel(): SignupViewModel {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Where to land after confirming the email (e.g. the event being booked).
+  const [nextPath, setNextPath] = useState("/");
+  useEffect(() => {
+    setNextPath(safeNextPath(new URLSearchParams(window.location.search).get("next")));
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,7 +69,7 @@ export function useSignupViewModel(): SignupViewModel {
         password,
       };
 
-      const result = await signUpWithEmail(credentials);
+      const result = await signUpWithEmail(credentials, nextPath);
 
       if (!result.ok) {
         setError(result.errorMessage ?? "Signup failed. Please try again.");
@@ -91,6 +99,7 @@ export function useSignupViewModel(): SignupViewModel {
     error,
     successMessage,
     isFormValid,
+    loginHref: nextPath === "/" ? "/login" : `/login?next=${encodeURIComponent(nextPath)}`,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,
     onConfirmPasswordChange: setConfirmPassword,

@@ -14,17 +14,25 @@ This project now uses MVVM for feature modules.
 
 | Feature | Routes | Notes |
 | --- | --- | --- |
-| `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout`, `/auth/callback` | Supabase email + password; email links land on `/auth/callback` |
-| `admin` | `/admin`, `/admin/events`, `/admin/events/new`, `/admin/events/[id]/edit`, `/admin/bookings`, `/admin/check-in`, `/admin/users`, `/admin/content`, `/admin/categories`, `/admin/notifications` | Admin-only (check-in: staff too). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
-| `shell` | — | `AppShell` wraps signed-in public pages: sidebar, top bar, session guard |
-| `dashboard` | `/dashboard` | Stats, next event, recent tickets, upcoming events |
-| `events` | `/events`, `/events/[id]` | Browse and book (read-only; events are managed in admin) |
-| `tickets` | `/tickets`, `/tickets/[id]` | View, cancel, download, share tickets |
-| `profile` | `/profile` | Edit name and avatar |
+| `site` | — | Public layout pieces: header (nav, bell, account menu), announcement bar, notices, footer. Layout: `app/(public)/layout.tsx` |
+| `events` | `/`, `/events`, `/events/[slug]` | Server-rendered browsing (`publicEvents.server.ts`); booking via `BookButton` |
+| `tickets` | `/tickets`, `/tickets/[code]` | My tickets (Upcoming/Past), ticket page with QR, PNG/PDF, share, calendar, cancel |
+| `notifications` | — | Bell dropdown: unread count, list, mark read / mark all read |
+| `profile` | `/profile` | Name and avatar (uploaded to the `avatars` bucket) |
+| `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout`, `/auth/callback` | Email + password. Email links land on `/auth/callback`. `?next=` returns users to where they were |
+| `admin` | `/admin/*` | Admin dashboard (check-in: staff too). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
+
+Redirects kept for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/check-in`, `/events/<id>` → `/events/<slug>`.
+
+Server vs client: public browsing pages are Server Components (good for SEO and
+first load). Signed-in pages check the session on the server (`lib/requireViewer.ts`)
+and load data in the browser. Dates are rendered with `components/ui/LocalDateTime.tsx`
+so they always show in the visitor's time zone. QR codes are generated in the
+browser (`lib/qr.ts`); ticket codes are never sent to third parties.
 
 Shared:
 - `components/ui/`: design-system components (Button, Field/Input/Select/Textarea/Switch, Card, Badge, Table, Dialog/ConfirmDialog, Toast, Skeleton, EmptyState, Tabs). Tokens live in `app/globals.css` (light admin theme by default, `.theme-public` for the dark public theme).
-- `lib/supabase.ts` (browser client, cookie session), `lib/supabase/server.ts` (server client + `getViewer()`), `lib/database.types.ts`, `lib/format.ts`, `lib/storage.ts`, `lib/csv.ts`, `lib/search.ts`, `lib/useAsyncData.ts`.
+- `lib/supabase.ts` (browser client, cookie session), `lib/supabase/server.ts` (server client + `getViewer()`), `lib/database.types.ts`, `lib/format.ts`, `lib/storage.ts`, `lib/siteContent.ts`, `lib/qr.ts`, `lib/ticketImage.ts` (PNG/PDF), `lib/ics.ts`, `lib/csv.ts`, `lib/search.ts`, `lib/useAsyncData.ts`.
 
 ## Roles
 
