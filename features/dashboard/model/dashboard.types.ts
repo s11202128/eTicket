@@ -51,11 +51,16 @@ export type UserProfile = {
   role: "customer" | "admin";
 };
 
-export type DashboardSnapshot = {
-  profile: UserProfile;
-  events: Event[];
-  tickets: Ticket[];
-  updatedAt: string;
+export type DashboardData = {
+  appName: string;
+  userName: string;
+  userAvatar: string;
+  notifications: number;
+  sidebarItems: SidebarItem[];
+  stats: DashboardStat[];
+  nextEvent: NextEvent | null;
+  recentTickets: RecentTicket[];
+  upcomingEvents: UpcomingEvent[];
 };
 
 export type DashboardStat = {

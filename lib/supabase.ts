@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 
 let browserClient: SupabaseClient | null = null;
 
@@ -17,6 +18,4 @@ export function getSupabaseClient(): SupabaseClient | null {
   return browserClient;
 }
 
-export function getSupabaseConfigurationError(): string {
-  return "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local.";
-}
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

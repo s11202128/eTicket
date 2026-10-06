@@ -4,10 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { hasActiveSession, signOut } from "@/features/auth/model/session.repository";
 import {
-  bookEvent,
-  fetchDashboardSnapshot,
-  updateProfile,
-} from "@/features/dashboard/model/dashboard.repository";
+  getCurrentUserProfile,
+  hasActiveSession,
+} from "@/features/auth/model/session.repository";
+import { bookTicket } from "@/features/tickets/model/tickets.repository";
 import type {
   DashboardSnapshot,
   DashboardStat,
@@ -18,15 +18,51 @@ import type {
   UserProfile,
 } from "@/features/dashboard/model/dashboard.types";
 
-const EMPTY_PROFILE: UserProfile = {
-  displayName: "",
-  email: "",
-  phone: "",
-  avatarUrl: null,
-  role: "customer",
+type DashboardViewModel = {
+  isLoading: boolean;
+  error: string | null;
+  notice: string | null;
+  appName: string;
+  userName: string;
+  userAvatar: string;
+  notifications: number;
+  sidebarItems: SidebarItem[];
+  lastUpdated: string;
+  stats: DashboardStat[];
+  nextEvent: NextEvent | null;
+  recentTickets: RecentTicket[];
+  upcomingEvents: UpcomingEvent[];
+  bookingEventId: string | null;
+  onBookTicket: (eventId: string) => Promise<void>;
 };
 
-export function useDashboardViewModel(activeView: DashboardViewName) {
+const EMPTY_SNAPSHOT: DashboardSnapshot = {
+  appName: "E-Ticket",
+  userName: "",
+  userAvatar: "",
+  notifications: 0,
+  sidebarItems: [],
+  updatedAt: "",
+  stats: [],
+  nextEvent: null,
+  recentTickets: [],
+  upcomingEvents: [],
+};
+
+async function loadSnapshot(): Promise<DashboardSnapshot> {
+  const [data, profile] = await Promise.all([
+    fetchDashboardSnapshot(),
+    getCurrentUserProfile(),
+  ]);
+
+  return {
+    ...data,
+    userName: profile?.displayName || data.userName,
+    userAvatar: profile?.avatarUrl || data.userAvatar,
+  };
+}
+
+export function useDashboardViewModel(): DashboardViewModel {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<DashboardSnapshot>({
     profile: EMPTY_PROFILE,
@@ -38,22 +74,7 @@ export function useDashboardViewModel(activeView: DashboardViewName) {
   const [actionId, setActionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const loadDashboard = useCallback(async () => {
-    try {
-      const authenticated = await hasActiveSession();
-      if (!authenticated) {
-        router.replace("/login");
-        return;
-      }
-      setSnapshot(await fetchDashboardSnapshot());
-      setError(null);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load your account.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router]);
+  const [bookingEventId, setBookingEventId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadDashboard();
@@ -70,55 +91,20 @@ export function useDashboardViewModel(activeView: DashboardViewName) {
     { id: "logout", label: "Sign out", href: "/login", icon: "logout" },
   ];
 
-  const stats = useMemo<DashboardStat[]>(() => {
-    const activeTickets = snapshot.tickets.filter((ticket) => ticket.status === "active");
-    return [
-      {
-        id: "active-tickets",
-        title: "Active tickets",
-        value: String(activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0)),
-        subtitle: "Ready on your phone",
-        icon: "ticket",
-      },
-      {
-        id: "upcoming-events",
-        title: "Events saved",
-        value: String(new Set(activeTickets.map((ticket) => ticket.eventId)).size),
-        subtitle: "On your calendar",
-        icon: "event",
-      },
-      {
-        id: "available",
-        title: "Events to explore",
-        value: String(snapshot.events.length),
-        subtitle: "Curated for you",
-        icon: "dashboard",
-      },
-    ];
-  }, [snapshot.events.length, snapshot.tickets]);
+        const data = await loadSnapshot();
 
-  const onBook = async (event: Event, quantity = 1) => {
-    setActionId(event.id);
-    setError(null);
-    setNotice(null);
-    try {
-      const ticket = await bookEvent(event.id, quantity);
-      setSnapshot((current) => ({
-        ...current,
-        events: current.events.map((item) =>
-          item.id === event.id
-            ? { ...item, remainingTickets: Math.max(0, item.remainingTickets - quantity) }
-            : item,
-        ),
-        tickets: [ticket, ...current.tickets],
-      }));
-      setNotice(`${quantity} ${quantity === 1 ? "ticket" : "tickets"} booked for ${event.title}.`);
-    } catch (bookingError) {
-      setError(bookingError instanceof Error ? bookingError.message : "Booking failed.");
-    } finally {
-      setActionId(null);
-    }
-  };
+        if (isMounted) {
+          setSnapshot(data);
+          setError(null);
+          setIsLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setError("Unable to load dashboard data.");
+          setIsLoading(false);
+        }
+      }
+    };
 
   const onProfileSave = async (displayName: string, phone: string) => {
     setActionId("profile");
@@ -144,10 +130,35 @@ export function useDashboardViewModel(activeView: DashboardViewName) {
     router.refresh();
   };
 
-  const nextTicket: Ticket | null =
-    snapshot.tickets
-      .filter((ticket) => ticket.status === "active")
-      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0] ?? null;
+  const onBookTicket = useCallback(
+    async (eventId: string) => {
+      if (bookingEventId) return;
+
+      setBookingEventId(eventId);
+      setNotice(null);
+
+      try {
+        const result = await bookTicket(eventId);
+        if (!result.ok) {
+          setNotice(result.errorMessage ?? "Booking failed. Please try again.");
+          return;
+        }
+
+        setSnapshot(await loadSnapshot());
+        setNotice("Ticket booked. You can find it under Recent Tickets.");
+      } catch {
+        setNotice("Booking failed. Please try again.");
+      } finally {
+        setBookingEventId(null);
+      }
+    },
+    [bookingEventId]
+  );
+
+  const lastUpdated = useMemo(() => {
+    if (!snapshot.updatedAt) return "";
+    return new Date(snapshot.updatedAt).toLocaleString();
+  }, [snapshot.updatedAt]);
 
   return {
     activeView,
@@ -162,8 +173,17 @@ export function useDashboardViewModel(activeView: DashboardViewName) {
     actionId,
     error,
     notice,
-    onBook,
-    onProfileSave,
-    onLogout,
+    appName: snapshot.appName,
+    userName: snapshot.userName,
+    userAvatar: snapshot.userAvatar,
+    notifications: snapshot.notifications,
+    sidebarItems: snapshot.sidebarItems,
+    lastUpdated,
+    stats: snapshot.stats,
+    nextEvent: snapshot.nextEvent,
+    recentTickets: snapshot.recentTickets,
+    upcomingEvents: snapshot.upcomingEvents,
+    bookingEventId,
+    onBookTicket,
   };
 }

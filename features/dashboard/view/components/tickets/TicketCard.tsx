@@ -1,5 +1,5 @@
-import type { Ticket } from "@/features/dashboard/model/dashboard.types";
-import { formatMoney } from "@/features/dashboard/model/formatters";
+import Image from "next/image";
+import type { RecentTicket } from "@/features/dashboard/model/dashboard.types";
 import { TicketActions } from "@/features/dashboard/view/components/tickets/TicketActions";
 import Image from "next/image";
 import styles from "@/features/dashboard/view/DashboardView.module.css";
@@ -22,11 +22,15 @@ export function TicketCard({ ticket }: TicketCardProps) {
         </span>
       </div>
 
-      <div className={styles.ticketFooter}>
-        <div><span className={styles.referenceLabel}>BOOKING REFERENCE</span><strong>{ticket.bookingReference}</strong><small>{ticket.quantity} {ticket.quantity === 1 ? "admission" : "admissions"} · {formatMoney(ticket.totalPriceCents, ticket.currency)}</small></div>
-        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(ticket.qrData)}`} alt={`${ticket.eventTitle} ticket QR code`} width={82} height={82} className={styles.qrImage} />
-      </div>
-      <TicketActions reference={ticket.bookingReference} title={ticket.eventTitle} />
+      <Image
+        src={ticket.qrImageUrl}
+        alt={`${ticket.eventTitle} QR`}
+        width={92}
+        height={92}
+        className={styles.qrImage}
+      />
+
+      <TicketActions />
     </article>
   );
 }
