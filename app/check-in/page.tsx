@@ -1,5 +1,6 @@
-import CheckInScreen from "@/features/tickets/view/CheckInScreen";
+import { redirect } from "next/navigation";
 
+// Check-in moved to the admin area (staff and admins only).
 export default function CheckInPage() {
-  return <CheckInScreen />;
+  redirect("/admin/check-in");
 }

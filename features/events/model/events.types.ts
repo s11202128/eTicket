@@ -2,25 +2,6 @@ import type { Tables } from "@/lib/database.types";
 
 export type EventRecord = Tables<"events">;
 
-export type EventInput = {
-  title: string;
-  description: string | null;
-  startsAt: string;
-  location: string;
-  price: number;
-  capacity: number | null;
-  imageUrl: string | null;
-};
-
-export type EventResult = {
-  ok: boolean;
-  errorMessage?: string;
-};
-
-export type CreateEventResult = EventResult & {
-  eventId?: string;
-};
-
 // Display-ready event for cards and lists.
 export type EventSummary = {
   id: string;

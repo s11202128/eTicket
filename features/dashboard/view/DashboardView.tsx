@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { DashboardStat, NextEvent } from "@/features/dashboard/model/dashboard.types";
 import type { EventSummary } from "@/features/events/model/events.types";
 import type { TicketSummary } from "@/features/tickets/model/tickets.types";
@@ -83,7 +82,7 @@ export function DashboardView({
           ))}
           {upcomingEvents.length === 0 ? (
             <p className={styles.subtle}>
-              No upcoming events. <Link href="/events/new">Create one</Link>.
+              No upcoming events yet. Check back soon.
             </p>
           ) : null}
         </div>

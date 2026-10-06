@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { UserRole } from "@/lib/database.types";
 
 export type AuthUserProfile = {
   displayName: string;
@@ -62,4 +63,14 @@ export async function getCurrentUserProfile(): Promise<AuthUserProfile | null> {
     displayName,
     avatarUrl,
   };
+}
+
+// The signed-in user's role, or null when signed out. For showing or hiding
+// links only; permissions are enforced by the database.
+export async function getCurrentRole(): Promise<UserRole | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+
+  const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
+  return (data?.role as UserRole | undefined) ?? null;
 }

@@ -1,38 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { formatDate, formatDateTime, formatPrice } from "@/lib/format";
-import type {
-  CreateEventResult,
-  EventDetails,
-  EventInput,
-  EventRecord,
-  EventResult,
-  EventSummary,
-} from "@/features/events/model/events.types";
+import { eventImageSrc } from "@/lib/storage";
+import type { EventDetails, EventRecord, EventSummary } from "@/features/events/model/events.types";
 
-export const FALLBACK_EVENT_IMAGE =
-  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1400&q=80";
-
-// Title-based slug with a short random suffix so it is unique.
-function uniqueSlug(title: string): string {
-  const base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const suffix = crypto.randomUUID().slice(0, 6);
-  return `${base || "event"}-${suffix}`;
-}
-
-function toRow(input: EventInput) {
-  return {
-    title: input.title,
-    description: input.description,
-    starts_at: input.startsAt,
-    location: input.location,
-    price: input.price,
-    capacity: input.capacity,
-    image_url: input.imageUrl,
-  };
-}
+// Read-only: events are created and edited in the admin dashboard.
 
 // Seat counts come from a database function because row-level security
 // hides other users' tickets.
@@ -60,7 +31,7 @@ function toEventDetails(event: EventRecord, booked: number, now: Date): EventDet
     dateTime: formatDateTime(event.starts_at),
     location: event.location,
     price: formatPrice(event.price),
-    imageUrl: event.image_url || FALLBACK_EVENT_IMAGE,
+    imageUrl: eventImageSrc(event.image_path, event.image_url),
     spotsLeft,
     isSoldOut: spotsLeft === 0,
     isPast: new Date(event.starts_at) < now,
@@ -78,61 +49,6 @@ async function toEventDetailsList(events: EventRecord[]): Promise<EventDetails[]
   const counts = await fetchBookedCounts(events.map((event) => event.id));
   const now = new Date();
   return events.map((event) => toEventDetails(event, counts.get(event.id) ?? 0, now));
-}
-
-export async function createEvent(input: EventInput): Promise<CreateEventResult> {
-  // created_by defaults to auth.uid(); only admins pass row-level security.
-  const { data, error } = await supabase
-    .from("events")
-    .insert({ ...toRow(input), slug: uniqueSlug(input.title), status: "published" })
-    .select("id")
-    .single();
-
-  if (error) {
-    return {
-      ok: false,
-      errorMessage: error.message,
-    };
-  }
-
-  return { ok: true, eventId: data.id };
-}
-
-export async function updateEvent(eventId: string, input: EventInput): Promise<EventResult> {
-  const { data, error } = await supabase
-    .from("events")
-    .update(toRow(input))
-    .eq("id", eventId)
-    .select("id");
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
-  // Row-level security silently skips events the user doesn't own.
-  if (data.length === 0) {
-    return { ok: false, errorMessage: "You can only edit events you created." };
-  }
-
-  return { ok: true };
-}
-
-export async function deleteEvent(eventId: string): Promise<EventResult> {
-  const { data, error } = await supabase
-    .from("events")
-    .delete()
-    .eq("id", eventId)
-    .select("id");
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
-  if (data.length === 0) {
-    return { ok: false, errorMessage: "You can only delete events you created." };
-  }
-
-  return { ok: true };
 }
 
 export async function getEventRecord(eventId: string): Promise<EventRecord | null> {
@@ -170,20 +86,6 @@ export async function listUpcomingEvents(limit?: number): Promise<EventSummary[]
   }
 
   const { data, error } = await query;
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return toEventDetailsList(data);
-}
-
-export async function listEventsCreatedBy(userId: string): Promise<EventDetails[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("created_by", userId)
-    .order("starts_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);

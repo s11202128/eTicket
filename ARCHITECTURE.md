@@ -14,34 +14,43 @@ This project now uses MVVM for feature modules.
 
 | Feature | Routes | Notes |
 | --- | --- | --- |
-| `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout` | Supabase email + password auth |
-| `shell` | — | `AppShell` wraps signed-in pages: sidebar, top bar, session guard |
+| `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout`, `/auth/callback` | Supabase email + password; email links land on `/auth/callback` |
+| `admin` | `/admin`, `/admin/events`, `/admin/events/new`, `/admin/events/[id]/edit`, `/admin/bookings`, `/admin/check-in`, `/admin/users`, `/admin/content`, `/admin/categories`, `/admin/notifications` | Admin-only (check-in: staff too). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
+| `shell` | — | `AppShell` wraps signed-in public pages: sidebar, top bar, session guard |
 | `dashboard` | `/dashboard` | Stats, next event, recent tickets, upcoming events |
-| `events` | `/events`, `/events/new`, `/events/[id]`, `/events/[id]/edit` | Browse, create, edit, delete events |
-| `tickets` | `/tickets`, `/tickets/[id]`, `/check-in` | Book, view, cancel, share tickets; organizer check-in |
+| `events` | `/events`, `/events/[id]` | Browse and book (read-only; events are managed in admin) |
+| `tickets` | `/tickets`, `/tickets/[id]` | View, cancel, download, share tickets |
 | `profile` | `/profile` | Edit name and avatar |
 
-Shared: `lib/supabase.ts` (typed client), `lib/database.types.ts` (generated
-schema types), `lib/format.ts` (date/price formatting).
+Shared:
+- `components/ui/`: design-system components (Button, Field/Input/Select/Textarea/Switch, Card, Badge, Table, Dialog/ConfirmDialog, Toast, Skeleton, EmptyState, Tabs). Tokens live in `app/globals.css` (light admin theme by default, `.theme-public` for the dark public theme).
+- `lib/supabase.ts` (browser client, cookie session), `lib/supabase/server.ts` (server client + `getViewer()`), `lib/database.types.ts`, `lib/format.ts`, `lib/storage.ts`, `lib/csv.ts`, `lib/search.ts`, `lib/useAsyncData.ts`.
+
+## Roles
+
+| Role | Can |
+| --- | --- |
+| `user` | Browse, book, manage own tickets and profile |
+| `staff` | Everything a user can, plus `/admin/check-in` |
+| `admin` | Everything, including roles, events, content and notifications |
 
 ## Database
 
 Schema lives in `supabase/migrations/`. Access rules are enforced in Postgres
-with row-level security, so the client never needs to be trusted:
+with row-level security and functions, so the client is never trusted:
 
-- `profiles`: users read their own row and may update only `full_name` and `avatar_url`.
-- `events`: public read; creators insert, update and delete their own.
-- `tickets`: users read and book their own, and may only change status to `cancelled`.
-  A trigger blocks bookings for past or full events (`events.capacity`).
-- `get_event_booked_counts(event_ids)`: seat counts for everyone.
-- `redeem_ticket(ticket_code)`: lets an event's organizer mark a ticket as used.
+- `profiles`: users read/edit their own name and avatar; only admins change `role`
+  (trigger), and admins can't demote themselves.
+- `events`: public reads `published` only; ticket holders can still read their
+  events; admins manage all. Events with tickets can't be deleted.
+- `tickets`: users read their own; admins read all. No direct writes:
+  `book_ticket`, `cancel_my_ticket`, `admin_cancel_ticket`, `check_in_ticket`.
+- `categories`, `site_content`: public read, admin write.
+- `notifications` (+ `notification_reads` for broadcasts): read via
+  `list_my_notifications` / `unread_notification_count`; admins send.
+- Admin functions: `admin_stats`, `admin_events_near_capacity`,
+  `admin_cancel_event`, `admin_notify_event_holders`, `admin_set_featured_events`.
+- Storage buckets: `event-images`, `site-images` (admin write), `avatars`
+  (each user writes their own folder); all publicly readable.
 
-After a migration, regenerate `lib/database.types.ts`.
-
-## Rules
-
-1. Keep `app/*/page.tsx` simple; delegate behavior to feature modules.
-2. Keep View components stateless and focused on rendering props.
-3. Put API/database calls in Model repositories, not inside Views.
-4. Put loading/error/derived state in ViewModel hooks.
-5. Reuse shared clients from `lib/`.
+After a migration, regenerate `lib/database.types.ts` (see the note at its top).

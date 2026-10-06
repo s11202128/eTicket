@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getCurrentUserId } from "@/features/auth/model/session.repository";
-import { deleteEvent, getEventDetails } from "@/features/events/model/events.repository";
+import { getCurrentRole } from "@/features/auth/model/session.repository";
+import { getEventDetails } from "@/features/events/model/events.repository";
 import type { EventDetails } from "@/features/events/model/events.types";
 import { listMyTickets, toTicketSummary } from "@/features/tickets/model/tickets.repository";
 import type { TicketSummary } from "@/features/tickets/model/tickets.types";
@@ -13,25 +12,23 @@ type EventDetailsViewModel = {
   isLoading: boolean;
   error: string | null;
   event: EventDetails | null;
-  isOwner: boolean;
+  isAdmin: boolean;
   myTicket: TicketSummary | null;
   notice: string | null;
   isBooking: boolean;
-  isDeleting: boolean;
   onBook: () => Promise<void>;
-  onDelete: () => Promise<void>;
 };
 
 type EventDetailsState = {
   event: EventDetails | null;
-  isOwner: boolean;
+  isAdmin: boolean;
   myTicket: TicketSummary | null;
 };
 
 async function loadEventDetails(eventId: string): Promise<EventDetailsState> {
-  const [event, userId, tickets] = await Promise.all([
+  const [event, role, tickets] = await Promise.all([
     getEventDetails(eventId),
-    getCurrentUserId(),
+    getCurrentRole(),
     listMyTickets(),
   ]);
 
@@ -41,22 +38,19 @@ async function loadEventDetails(eventId: string): Promise<EventDetailsState> {
 
   return {
     event,
-    isOwner: Boolean(event && userId && event.createdBy === userId),
+    isAdmin: role === "admin",
     myTicket: activeTicket ? toTicketSummary(activeTicket) : null,
   };
 }
 
 export function useEventDetailsViewModel(eventId: string): EventDetailsViewModel {
-  const router = useRouter();
   const [state, setState] = useState<EventDetailsState>({
     event: null,
-    isOwner: false,
+    isAdmin: false,
     myTicket: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const reload = useCallback(async () => {
     setState(await loadEventDetails(eventId));
@@ -85,42 +79,14 @@ export function useEventDetailsViewModel(eventId: string): EventDetailsViewModel
     };
   }, [eventId]);
 
-  const onBook = () => onBookTicket(eventId);
-
-  const onDelete = async () => {
-    if (isDeleting) return;
-    const confirmed = window.confirm(
-      "Delete this event? All tickets booked for it will be removed too."
-    );
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    setDeleteError(null);
-
-    try {
-      const result = await deleteEvent(eventId);
-      if (!result.ok) {
-        setDeleteError(result.errorMessage ?? "Could not delete the event.");
-        return;
-      }
-      router.push("/events");
-    } catch {
-      setDeleteError("Could not delete the event.");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   return {
     isLoading,
     error,
     event: state.event,
-    isOwner: state.isOwner,
+    isAdmin: state.isAdmin,
     myTicket: state.myTicket,
-    notice: deleteError ?? bookingNotice,
+    notice: bookingNotice,
     isBooking: bookingEventId === eventId,
-    isDeleting,
-    onBook,
-    onDelete,
+    onBook: () => onBookTicket(eventId),
   };
 }

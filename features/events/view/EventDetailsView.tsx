@@ -9,13 +9,11 @@ type EventDetailsViewProps = {
   isLoading: boolean;
   error: string | null;
   event: EventDetails | null;
-  isOwner: boolean;
+  isAdmin: boolean;
   myTicket: TicketSummary | null;
   notice: string | null;
   isBooking: boolean;
-  isDeleting: boolean;
   onBook: () => Promise<void>;
-  onDelete: () => Promise<void>;
 };
 
 function availability(event: EventDetails): string {
@@ -28,13 +26,11 @@ export function EventDetailsView({
   isLoading,
   error,
   event,
-  isOwner,
+  isAdmin,
   myTicket,
   notice,
   isBooking,
-  isDeleting,
   onBook,
-  onDelete,
 }: EventDetailsViewProps) {
   if (isLoading) {
     return <p className={dashboardStyles.stateText}>Loading event...</p>;
@@ -95,23 +91,10 @@ export function EventDetailsView({
           </button>
         )}
 
-        {isOwner ? (
-          <>
-            <Link className={styles.secondaryBtn} href={`/events/${event.id}/edit`}>
-              Edit
-            </Link>
-            <Link className={styles.secondaryBtn} href="/check-in">
-              Check in tickets
-            </Link>
-            <button
-              className={styles.dangerBtn}
-              type="button"
-              disabled={isDeleting}
-              onClick={() => void onDelete()}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </button>
-          </>
+        {isAdmin ? (
+          <Link className={styles.secondaryBtn} href={`/admin/events/${event.id}/edit`}>
+            Manage in admin
+          </Link>
         ) : null}
       </div>
 
