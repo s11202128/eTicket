@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmail } from "@/features/auth/model/auth.repository";
 import type { LoginCredentials } from "@/features/auth/model/auth.types";
+import { safeNextPath } from "@/lib/safeRedirect";
 
 type LoginViewModel = {
   email: string;
@@ -65,7 +66,9 @@ export function useLoginViewModel(): LoginViewModel {
         return;
       }
 
-      router.push("/dashboard");
+      // Return to the page that asked for sign-in (e.g. an admin page).
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(safeNextPath(next, "/dashboard"));
       router.refresh();
     } catch {
       setError("Login failed. Please try again.");

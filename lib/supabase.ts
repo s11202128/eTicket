@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/lib/database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,4 +10,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Browser client. The session is stored in cookies so the server (proxy,
+// admin layout, auth callback) can read the same login.
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);

@@ -305,7 +305,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_cancel_event: {
+        Args: { p_event_id: string; p_reason?: string }
+        Returns: number
+      }
       admin_cancel_ticket: { Args: { p_ticket_id: string } } & ReturnsTicket
+      admin_notify_event_holders: {
+        Args: { p_body?: string; p_event_id: string; p_link?: string; p_title: string }
+        Returns: number
+      }
+      admin_set_featured_events: {
+        Args: { p_event_ids: string[] }
+        Returns: undefined
+      }
       admin_events_near_capacity: {
         Args: { p_threshold?: number }
         Returns: {

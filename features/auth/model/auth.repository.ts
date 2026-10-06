@@ -30,6 +30,11 @@ export async function signUpWithEmail(
   const { data, error } = await supabase.auth.signUp({
     email: credentials.email,
     password: credentials.password,
+    options: {
+      // The confirmation link signs the user in through /auth/callback.
+      emailRedirectTo:
+        typeof window !== "undefined" ? `${window.location.origin}/auth/callback?next=/` : undefined,
+    },
   });
 
   if (error) {
