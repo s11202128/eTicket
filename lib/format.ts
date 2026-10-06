@@ -46,3 +46,34 @@ export function isHttpUrl(value: string): boolean {
     return false;
   }
 }
+
+export function formatShortDateTime(iso: string): string {
+  return shortDateTimeFormatter.format(new Date(iso));
+}
+
+const shortDateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+// Viewer's IANA time zone, e.g. "Pacific/Port_Moresby".
+export function viewerTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+    .replace(/-+$/g, "");
+}
