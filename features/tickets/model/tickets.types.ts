@@ -1,4 +1,4 @@
-import type { Tables } from "@/lib/database.types";
+import type { CheckInResult, Tables } from "@/lib/database.types";
 
 export type TicketWithEvent = Tables<"tickets"> & {
   events: Pick<Tables<"events">, "id" | "title" | "starts_at" | "location"> | null;
@@ -9,9 +9,12 @@ export type TicketResult = {
   errorMessage?: string;
 };
 
-export type RedeemResult = TicketResult & {
-  eventTitle?: string;
-  holderEmail?: string;
+export type CheckInOutcome = TicketResult & {
+  result?: CheckInResult;
+  code?: string;
+  eventTitle?: string | null;
+  holderName?: string | null;
+  checkedInAt?: string | null;
 };
 
 // "Expired" means still active in the database but the event has passed.

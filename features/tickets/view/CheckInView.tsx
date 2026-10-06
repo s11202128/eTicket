@@ -24,8 +24,8 @@ export function CheckInView({
         <h1>Check-in</h1>
       </div>
       <p className={dashboardStyles.subtle} style={{ margin: "8px 0 16px" }}>
-        Enter the ticket code shown on the guest&apos;s ticket to mark it as used. You can only check in
-        tickets for events you organise.
+        Enter the ticket code shown on the guest&apos;s ticket to mark it as used. Only staff and admins
+        can check in tickets.
       </p>
 
       <form

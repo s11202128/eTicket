@@ -12,6 +12,16 @@ import type {
 export const FALLBACK_EVENT_IMAGE =
   "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1400&q=80";
 
+// Title-based slug with a short random suffix so it is unique.
+function uniqueSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const suffix = crypto.randomUUID().slice(0, 6);
+  return `${base || "event"}-${suffix}`;
+}
+
 function toRow(input: EventInput) {
   return {
     title: input.title,
@@ -71,10 +81,10 @@ async function toEventDetailsList(events: EventRecord[]): Promise<EventDetails[]
 }
 
 export async function createEvent(input: EventInput): Promise<CreateEventResult> {
-  // created_by defaults to auth.uid() in the database.
+  // created_by defaults to auth.uid(); only admins pass row-level security.
   const { data, error } = await supabase
     .from("events")
-    .insert(toRow(input))
+    .insert({ ...toRow(input), slug: uniqueSlug(input.title), status: "published" })
     .select("id")
     .single();
 
@@ -151,6 +161,7 @@ export async function listUpcomingEvents(limit?: number): Promise<EventSummary[]
   let query = supabase
     .from("events")
     .select("*")
+    .eq("status", "published")
     .gte("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: true });
 

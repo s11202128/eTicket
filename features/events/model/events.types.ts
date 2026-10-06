@@ -42,5 +42,5 @@ export type EventDetails = EventSummary & {
   imageUrlRaw: string | null;
   capacity: number | null;
   booked: number;
-  createdBy: string;
+  createdBy: string | null;
 };

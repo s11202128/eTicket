@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { redeemTicket } from "@/features/tickets/model/tickets.repository";
+import { checkInTicket } from "@/features/tickets/model/tickets.repository";
+import type { CheckInResult } from "@/lib/database.types";
+
+const RESULT_MESSAGES: Record<CheckInResult, string> = {
+  valid: "Valid ticket. Checked in",
+  already_used: "Already used",
+  cancelled: "Ticket cancelled",
+  wrong_date: "Not valid today",
+  not_found: "Ticket not found",
+};
 
 type CheckInViewModel = {
   code: string;
@@ -12,11 +21,6 @@ type CheckInViewModel = {
   onSubmit: () => Promise<void>;
 };
 
-// Accepts the bare code or the full QR payload ("ETICKET-<code>").
-function normalizeCode(raw: string): string {
-  return raw.trim().toUpperCase().replace(/^ETICKET-/, "");
-}
-
 export function useCheckInViewModel(): CheckInViewModel {
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,23 +28,32 @@ export function useCheckInViewModel(): CheckInViewModel {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const onSubmit = async () => {
-    const normalized = normalizeCode(code);
-    if (!normalized || isSubmitting) return;
+    // The database accepts the bare code or the QR payload "ETICKET-<code>".
+    const trimmed = code.trim();
+    if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      const result = await redeemTicket(normalized);
-      if (!result.ok) {
-        setError(result.errorMessage ?? "Check-in failed.");
+      const outcome = await checkInTicket(trimmed);
+      if (!outcome.ok || !outcome.result) {
+        setError(outcome.errorMessage ?? "Check-in failed.");
         return;
       }
 
-      const holder = result.holderEmail ? ` for ${result.holderEmail}` : "";
-      setSuccessMessage(`Checked in${holder} — ${result.eventTitle ?? "event"}.`);
-      setCode("");
+      const details = [outcome.holderName, outcome.eventTitle].filter(Boolean).join(" · ");
+      const message = details
+        ? `${RESULT_MESSAGES[outcome.result]}: ${details}`
+        : RESULT_MESSAGES[outcome.result];
+
+      if (outcome.result === "valid") {
+        setSuccessMessage(message);
+        setCode("");
+      } else {
+        setError(message);
+      }
     } catch {
       setError("Check-in failed. Please try again.");
     } finally {
