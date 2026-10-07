@@ -86,7 +86,7 @@ export function AdminShell({ name, badges, children }: AdminShellProps) {
         View site
       </Link>
       <Link
-        href="/logout"
+        href="/logout?next=/admin/login"
         className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
       >
         <span aria-hidden className="w-5 text-center">

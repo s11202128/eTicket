@@ -51,6 +51,8 @@ begin
     (pg_temp.uid('dora'),  'dora@test.invalid',  'authenticated', 'authenticated', '{"full_name":"Dora Door"}');
 
   -- Set up as the SQL editor would (no signed-in user, so guards allow it).
+  -- Admins must be on the authorized email list.
+  insert into public.admin_emails (email) values ('admin@test.invalid') on conflict do nothing;
   update public.profiles set role = 'admin' where id = pg_temp.uid('admin');
   update public.profiles set role = 'organizer' where id in (pg_temp.uid('oscar'), pg_temp.uid('otto'));
   insert into public.organizer_profiles (user_id, organization_name, status) values
@@ -472,6 +474,39 @@ begin
     where user_id = pg_temp.uid('oscar') and title = 'Cancellation request declined'), 1, 'the organizer is told');
   return next is((select count(*)::integer from public.audit_log
     where action = 'event.cancellation_declined' and target_id = v_live), 1, 'the decision is audited');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Admin access only for authorized emails
+-- ---------------------------------------------------------------------------
+create or replace function pg_temp.test_14_admin_email_allowlist() returns setof text language plpgsql as $$
+begin
+  perform pg_temp.fixtures();
+
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), 'select public.is_admin()::text'), 'true',
+    'an admin on the authorized list is an admin');
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), 'select count(*)::text from public.admin_emails'),
+    'ERROR: permission denied for table admin_emails', 'the list is not readable through the API');
+  return next is(pg_temp.run_as(pg_temp.uid('admin'),
+    format($q$update public.profiles set role = 'admin' where id = %L$q$, pg_temp.uid('alice'))),
+    'Only authorized admin emails can have the admin role.', 'admins cannot promote unlisted emails');
+
+  -- Removing an email from the list removes admin access immediately.
+  delete from public.admin_emails where email = 'admin@test.invalid';
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), 'select public.is_admin()::text'), 'false',
+    'a delisted email loses admin access even with the admin role');
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), 'select role from public.get_my_access()'), 'attendee',
+    'the route guard sees a delisted admin as an attendee');
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), 'select count(*)::text from public.audit_log'),
+    '0', 'a delisted admin cannot read admin-only data');
+
+  -- Adding an email to the list (SQL editor, no signed-in user) lets the role be granted.
+  perform set_config('request.jwt.claims', '', true);
+  insert into public.admin_emails (email) values ('alice@test.invalid');
+  update public.profiles set role = 'admin' where id = pg_temp.uid('alice');
+  return next is(pg_temp.value_as(pg_temp.uid('alice'), 'select public.is_admin()::text'), 'true',
+    'listed emails can be made admin from the SQL editor');
 end;
 $$;
 

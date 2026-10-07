@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const viewer = await getViewer();
 
   if (!viewer) {
-    redirect("/login?next=/admin");
+    redirect("/admin/login");
   }
 
   if (viewer.role !== "admin") {

@@ -27,6 +27,12 @@ export async function listUsers(filters: UserFilters, pageSize = 20): Promise<Pa
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
 
+  const { data: eligible, error: eligibleError } = await supabase.rpc("list_admin_eligible", {
+    p_user_ids: data.map((profile) => profile.id),
+  });
+  if (eligibleError) throw new Error(eligibleError.message);
+  const canBeAdmin = new Set(eligible.map((row) => row.user_id));
+
   return {
     rows: data.map((profile) => ({
       id: profile.id,
@@ -34,12 +40,14 @@ export async function listUsers(filters: UserFilters, pageSize = 20): Promise<Pa
       fullName: profile.full_name,
       role: profile.role as UserRole,
       createdAt: profile.created_at,
+      canBeAdmin: canBeAdmin.has(profile.id),
     })),
     total: count ?? 0,
   };
 }
 
-// The database trigger rejects non-admins and admins demoting themselves.
+// The database trigger rejects non-admins, admins demoting themselves and
+// the admin role for emails that aren't on the authorized admin list.
 export async function setUserRole(userId: string, role: UserRole): Promise<ActionResult> {
   const { data, error } = await supabase.from("profiles").update({ role }).eq("id", userId).select("id");
   if (error) return { ok: false, errorMessage: error.message };

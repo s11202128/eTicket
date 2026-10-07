@@ -4,7 +4,7 @@ An event ticketing web app built with **Next.js 16** (App Router) and **Supabase
 
 - **Public site**: browse events, book tickets and manage your own tickets.
 - **Event Manager** (`/manager`): approved organizers create events, sell tickets by type, follow sales and check guests in.
-- **Admin dashboard** (`/admin`): admins only. Admins control everything shown on the public site and check tickets in at the door.
+- **Admin dashboard** (`/admin`): authorized admins only, through its own login at `/admin/login` (not linked anywhere on the public site). Admins control everything shown on the public site and check tickets in at the door.
 
 All permissions are enforced in the database (row-level security and database functions). The browser is never trusted.
 
@@ -62,7 +62,7 @@ npm run lint
 
 **Door staff** isn't a role: an organizer adds people (by email) as staff for a specific event, and they can check in tickets for that event only.
 
-Only admins can open any `/admin` page (checked on the server by `proxy.ts` and the admin layout, and enforced by the database). Everyone else is sent to the homepage with a "no access" message.
+Only authorized admins can open any `/admin` page (checked on the server by `proxy.ts` and the admin layout, and enforced by the database). Signed-out visitors are sent to `/admin/login`; everyone else to the homepage with a "no access" message.
 
 Rules enforced by the database:
 - Only admins can change roles (approving an organizer application does it for them). Users can't change their own, and an admin can't remove their own admin role.
@@ -76,16 +76,22 @@ Rules enforced by the database:
 - Every approval, review, cancellation and staff change is written to `audit_log` (admins can read it).
 - Events that have ended become `completed` automatically (hourly `pg_cron` job).
 
-### Creating the first admin
-Sign up on the site, then run this in the Supabase **SQL Editor** (replace the email):
+### Admins (authorized emails only)
+Someone is an admin only if their role is `admin` **and** their login email is on the authorized list `public.admin_emails`. The list can't be read or changed from the website or the API, not even by an admin; manage it in the Supabase **SQL Editor**:
 
 ```sql
-update public.profiles
-set role = 'admin'
-where email = 'you@example.com';
+-- Add an admin (they must have signed up first)
+insert into public.admin_emails (email) values ('someone@example.com');
+update public.profiles set role = 'admin'
+where id = (select id from auth.users where lower(email) = 'someone@example.com');
+
+-- Remove admin access (takes effect immediately)
+delete from public.admin_emails where email = 'someone@example.com';
+update public.profiles set role = 'attendee'
+where id = (select id from auth.users where lower(email) = 'someone@example.com');
 ```
 
-This works from the SQL Editor because no website user is signed in there. From the website, only an existing admin can change roles (Admin → Users).
+Admins log in at **`/admin/login`**. Accounts that aren't authorized are signed straight back out. On the public site admins are ordinary users (no admin links). Admin → Users only offers the admin role for emails on the list.
 
 ---
 

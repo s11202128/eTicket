@@ -31,9 +31,6 @@ function modeLinks(viewer: NonNullable<HeaderViewer>) {
   if (viewer.isStaff && viewer.organizerStatus !== "approved") {
     links.push({ href: "/manager/check-in", label: "Check-in" });
   }
-  if (viewer.role === "admin") {
-    links.push({ href: "/admin", label: "Admin dashboard" });
-  }
   return links;
 }
 

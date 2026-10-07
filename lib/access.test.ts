@@ -16,9 +16,9 @@ const href = (access: Access, mode: "book" | "manager", next: string | null = nu
 };
 
 describe("loginDestination", () => {
-  it("sends admins to the admin dashboard", () => {
-    assert.equal(href(admin, "book"), "/admin");
-    assert.equal(href(admin, "manager"), "/admin");
+  it("never sends admins to the admin area (it has its own login)", () => {
+    assert.equal(href(admin, "book"), "/");
+    assert.equal(href(admin, "manager"), "apply_prompt");
     assert.equal(href(admin, "book", "/events/jazz"), "/events/jazz");
   });
 

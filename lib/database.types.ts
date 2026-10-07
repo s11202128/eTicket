@@ -546,6 +546,10 @@ export type Database = {
         Args: { p_body?: string; p_event_id: string; p_link?: string; p_title: string }
         Returns: number
       }
+      list_admin_eligible: {
+        Args: { p_user_ids: string[] }
+        Returns: { user_id: string }[]
+      }
       admin_queue_counts: {
         Args: never
         Returns: { cancellation_requests: number; pending_events: number; pending_organizers: number }[]

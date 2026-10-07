@@ -70,6 +70,8 @@ export type AdminUserRow = {
   fullName: string | null;
   role: UserRole;
   createdAt: string;
+  // Email is on the authorized admin list (only these can be made admin).
+  canBeAdmin: boolean;
 };
 
 export type AdminStats = {

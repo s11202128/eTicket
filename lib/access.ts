@@ -22,7 +22,8 @@ export const canUseCheckIn = (access: Access) =>
   access.role === "admin" || isApprovedOrganizer(access) || access.staffEventCount > 0;
 
 /**
- * - Admins: the admin dashboard (or the page that asked them to sign in).
+ * The admin area has its own login (/admin/login), so admins are treated
+ * like any other account here.
  * - "Manage events": approved organizers to /manager; applicants (pending,
  *   rejected, suspended) to their application status; door staff to the
  *   scanner; everyone else gets an "apply now" prompt.
@@ -30,10 +31,6 @@ export const canUseCheckIn = (access: Access) =>
  *   My tickets for organizers and the homepage for attendees.
  */
 export function loginDestination(access: Access, mode: LoginMode, next: string | null): LoginDestination {
-  if (access.role === "admin") {
-    return { kind: "redirect", href: next ?? "/admin" };
-  }
-
   if (mode === "manager") {
     if (isApprovedOrganizer(access)) {
       return { kind: "redirect", href: next?.startsWith("/manager") ? next : "/manager" };

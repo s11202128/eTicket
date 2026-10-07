@@ -471,7 +471,6 @@ function MediaStep({ vm }: { vm: EventWizardViewModel }) {
             }))}
             host={vm.host}
             isSignedIn
-            isAdmin={false}
             preview
           />
         </div>

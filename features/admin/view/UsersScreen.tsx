@@ -23,7 +23,10 @@ export default function UsersScreen() {
 
   return (
     <>
-      <PageHeader title="Users" description="Everyone with an account. Only admins can open the admin dashboard." />
+      <PageHeader
+        title="Users"
+        description="Everyone with an account. Only emails on the authorized admin list can be admins; that list is managed in the Supabase SQL editor."
+      />
 
       <section aria-label="Filters" className="grid gap-3 rounded-lg border border-border bg-surface p-4 sm:grid-cols-3">
         <Field label="Search" hint="Name or email" className="sm:col-span-2">
@@ -93,7 +96,10 @@ export default function UsersScreen() {
                         <option value="organizer" disabled>
                           Organizer
                         </option>
-                        <option value="admin">Admin</option>
+                        {/* Only emails on the authorized admin list (managed in Supabase). */}
+                        <option value="admin" disabled={!user.canBeAdmin && user.role !== "admin"}>
+                          Admin{user.canBeAdmin ? "" : " (not authorized)"}
+                        </option>
                       </Select>
                     </Td>
                   </tr>
