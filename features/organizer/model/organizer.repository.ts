@@ -4,6 +4,7 @@ import { publicImageUrl, uploadImage, type UploadResult } from "@/lib/storage";
 import type { OrganizerApplicationInput, OrganizerFormValues } from "@/features/organizer/model/organizer.schema";
 
 export type OrganizerApplication = {
+  userId: string;
   organizationName: string;
   phone: string | null;
   city: string | null;
@@ -22,6 +23,7 @@ export type ApplyResult = { ok: true } | { ok: false; errorMessage: string };
 
 function toApplication(row: Tables<"organizer_profiles">): OrganizerApplication {
   return {
+    userId: row.user_id,
     organizationName: row.organization_name,
     phone: row.phone,
     city: row.city,

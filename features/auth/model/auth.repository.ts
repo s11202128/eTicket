@@ -49,7 +49,21 @@ export async function signUpWithEmail(
   if (error) {
     return {
       ok: false,
-      errorMessage: error.message,
+      errorMessage:
+        error.code === "email_address_invalid"
+          ? "We can't send a confirmation email to this address. Check it's a real inbox you can open, or use a different email."
+          : error.message === "Failed to fetch"
+            ? "Couldn't reach the server. Check your connection and try again."
+            : error.message,
+    };
+  }
+
+  // Supabase hides "already registered" (to stop email probing): it returns a
+  // user with no identities and sends no email.
+  if (data.user && data.user.identities?.length === 0) {
+    return {
+      ok: false,
+      errorMessage: "An account with this email already exists. Log in instead, or use a different email.",
     };
   }
 

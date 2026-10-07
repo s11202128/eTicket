@@ -10,7 +10,7 @@ import type {
 } from "@/features/tickets/model/tickets.types";
 
 const TICKET_SELECT =
-  "id, code, status, created_at, checked_in_at, cancelled_at, events(id, slug, title, starts_at, end_at, location, image_path, image_url, status)";
+  "id, code, status, created_at, checked_in_at, cancelled_at, ticket_types(name), events(id, slug, title, starts_at, end_at, location, image_path, image_url, status)";
 
 // Without an end time an event counts as running for 6 hours.
 const DEFAULT_DURATION_MS = 6 * 60 * 60 * 1000;
@@ -22,6 +22,7 @@ type TicketRecord = {
   created_at: string;
   checked_in_at: string | null;
   cancelled_at: string | null;
+  ticket_types: { name: string } | null;
   events: {
     id: string;
     slug: string;
@@ -66,6 +67,8 @@ function toView(record: TicketRecord, now = Date.now()): TicketView {
           status: event.status as EventStatus,
         }
       : null,
+    ticketTypeName: record.ticket_types?.name ?? null,
+    eventCancelled: event?.status === "cancelled",
     // Matches cancel_my_ticket: active and the event hasn't started.
     canCancel: status === "active" && Boolean(event) && startsAt > now,
   };
@@ -87,24 +90,6 @@ export async function bookTicketType(ticketTypeId: string, quantity = 1): Promis
   });
   if (error) return { ok: false, errorMessage: error.message };
   return { ok: true, code: data[0]?.code };
-}
-
-// One-click booking: the event's first ticket type whose sales window is open.
-export async function bookTicket(eventId: string): Promise<BookResult> {
-  const now = new Date().toISOString();
-  const { data: types, error } = await supabase
-    .from("ticket_types")
-    .select("id, sales_start, sales_end")
-    .eq("event_id", eventId)
-    .order("sort_order")
-    .order("price");
-  if (error) return { ok: false, errorMessage: error.message };
-
-  const onSale = types.find(
-    (type) => (!type.sales_start || type.sales_start <= now) && (!type.sales_end || type.sales_end > now)
-  );
-  if (!onSale) return { ok: false, errorMessage: "Tickets for this event aren't on sale right now." };
-  return bookTicketType(onSale.id, 1);
 }
 
 export async function cancelTicket(ticketId: string): Promise<TicketResult> {

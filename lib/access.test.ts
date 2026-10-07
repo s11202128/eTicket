@@ -49,7 +49,7 @@ describe("managerAreaRedirect", () => {
   it("sends everyone else to their application page", () => {
     assert.equal(managerAreaRedirect(pending, "/manager"), "/manager/application");
     assert.equal(managerAreaRedirect(attendee, "/manager/events"), "/manager/application");
-    assert.equal(managerAreaRedirect(admin, "/manager"), "/manager/application");
+    assert.equal(managerAreaRedirect(admin, "/manager"), "/admin");
   });
 
   it("always allows the application page", () => {
@@ -61,6 +61,6 @@ describe("managerAreaRedirect", () => {
     assert.equal(managerAreaRedirect(admin, "/manager/check-in"), null);
     assert.equal(managerAreaRedirect(organizer, "/manager/check-in"), null);
     assert.equal(managerAreaRedirect(attendee, "/manager/check-in"), "/manager/application");
-    assert.equal(managerAreaRedirect(staff, "/manager/events"), "/manager/application");
+    assert.equal(managerAreaRedirect(staff, "/manager/events"), "/manager/check-in");
   });
 });

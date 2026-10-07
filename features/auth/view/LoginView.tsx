@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { FormMessage } from "@/features/auth/view/AuthPanel";
@@ -35,6 +36,7 @@ export function LoginView({
   onSubmit,
 }: LoginViewModel) {
   const copy = COPY[mode];
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <AuthSplitLayout audience={mode}>
@@ -72,13 +74,24 @@ export function LoginView({
             </Field>
             <Field label="Password">
               {(props) => (
-                <Input
-                  {...props}
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => onPasswordChange(event.target.value)}
-                />
+                <div className="relative">
+                  <Input
+                    {...props}
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    className="pr-16"
+                    value={password}
+                    onChange={(event) => onPasswordChange(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-muted hover:text-fg"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               )}
             </Field>
             <Link href="/forgot-password" className="justify-self-end text-sm font-semibold text-accent-text hover:underline">

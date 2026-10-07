@@ -10,6 +10,7 @@ export type TicketArtwork = {
   timeText: string;
   location: string;
   holderName: string;
+  ticketTypeName: string | null;
   status: string;
 };
 
@@ -78,9 +79,9 @@ async function drawTicket(ticket: TicketArtwork): Promise<HTMLCanvasElement> {
   context.fillText(fitText(context, ticket.eventTitle, textWidth), left, 160);
 
   const rows: [string, string][] = [
-    ["DATE", ticket.dateText],
-    ["TIME", ticket.timeText],
+    ["DATE & TIME", `${ticket.dateText} · ${ticket.timeText}`],
     ["VENUE", ticket.location],
+    ["TICKET", ticket.ticketTypeName ?? "General Admission"],
     ["NAME", ticket.holderName],
   ];
   rows.forEach(([label, value], index) => {

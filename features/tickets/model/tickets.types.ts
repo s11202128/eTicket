@@ -39,5 +39,8 @@ export type TicketView = {
   checkedInAt: string | null;
   cancelledAt: string | null;
   event: TicketEvent | null;
+  ticketTypeName: string | null;
+  // The organizer/admin cancelled the whole event (tickets were cancelled with it).
+  eventCancelled: boolean;
   canCancel: boolean;
 };

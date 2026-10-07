@@ -12,7 +12,9 @@ import type {
   HeroContentView,
   PublicCategory,
   PublicEvent,
+  PublicOrganizer,
 } from "@/features/events/model/events.types";
+import type { PublicTicketType } from "@/features/events/model/ticketAvailability";
 
 // Server-side reads for public pages. Row-level security limits every query
 // to published events (plus events the viewer holds tickets for).
@@ -65,6 +67,7 @@ function toPublicEvent(event: EventRow, sold: number, now: Date): PublicEvent {
     maxTicketsPerUser: event.max_tickets_per_user,
     status: event.status as EventStatus,
     region: event.region as EventRegion,
+    organizerId: event.organizer_id,
   };
 }
 
@@ -180,3 +183,63 @@ export const getPublicEvent = cache(async (slugOrId: string): Promise<PublicEven
   const [event] = await withCounts(supabase, [data as EventRow]);
   return event;
 });
+
+// Ticket types in display order with tickets sold, for the booking panel.
+export const getPublicTicketTypes = cache(async (eventId: string): Promise<PublicTicketType[]> => {
+  const supabase = await createSupabaseServerClient();
+  const [{ data, error }, { data: counts, error: countError }] = await Promise.all([
+    supabase
+      .from("ticket_types")
+      .select("id, name, description, price, quantity, sales_start, sales_end")
+      .eq("event_id", eventId)
+      .order("sort_order")
+      .order("price"),
+    supabase.rpc("get_ticket_type_counts", { p_event_ids: [eventId] }),
+  ]);
+  if (error) throw new Error(error.message);
+  if (countError) throw new Error(countError.message);
+  const sold = new Map(counts.map((row) => [row.ticket_type_id, row.sold]));
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    price: Number(row.price),
+    quantity: row.quantity,
+    sold: sold.get(row.id) ?? 0,
+    salesStart: row.sales_start,
+    salesEnd: row.sales_end,
+  }));
+});
+
+// Approved (or suspended, so existing events keep their host) organizers only.
+export const getPublicOrganizer = cache(async (organizerId: string): Promise<PublicOrganizer | null> => {
+  if (!UUID.test(organizerId)) return null;
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("get_public_organizers", { p_user_ids: [organizerId] });
+  if (error) throw new Error(error.message);
+  const row = data[0];
+  if (!row) return null;
+  return {
+    id: row.user_id,
+    name: row.organization_name,
+    logoUrl: row.logo_path ? storageUrl("organizer-logos", row.logo_path) : null,
+    description: row.description,
+    website: row.website,
+    city: row.city,
+  };
+});
+
+// An organizer's published events that haven't started yet, soonest first.
+export async function listOrganizerEvents(organizerId: string): Promise<PublicEvent[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_SELECT)
+    .eq("organizer_id", organizerId)
+    .eq("status", "published")
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(60);
+  if (error) throw new Error(error.message);
+  return withCounts(supabase, data as EventRow[]);
+}

@@ -49,9 +49,11 @@ export default function TicketDetailScreen({ code, holderName }: { code: string;
                   ? "Show this QR code at the entrance. Screen brightness up helps the scanner."
                   : ticket.phase === "used" && ticket.checkedInAt
                     ? <>Checked in <LocalDateTime iso={ticket.checkedInAt} format="dateTime" />.</>
-                    : ticket.phase === "cancelled"
-                      ? "This ticket was cancelled and can't be used."
-                      : "This event has ended."}
+                    : ticket.eventCancelled
+                      ? "This event was cancelled, so your ticket can no longer be used."
+                      : ticket.phase === "cancelled"
+                        ? "This ticket was cancelled and can't be used."
+                        : "This event has ended."}
               </p>
             }
           />

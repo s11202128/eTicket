@@ -15,13 +15,14 @@ function artwork(ticket: TicketView, holderName: string): TicketArtwork {
   return {
     code: ticket.code,
     eventTitle: ticket.event?.title ?? "Event",
+    ticketTypeName: ticket.ticketTypeName,
     dateText: start
       ? new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(start)
       : "",
     timeText: start ? new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "2-digit" }).format(start) : "",
     location: ticket.event?.location ?? "",
     holderName,
-    status: PHASE_LABEL[ticket.phase],
+    status: ticket.eventCancelled ? "Event cancelled" : PHASE_LABEL[ticket.phase],
   };
 }
 

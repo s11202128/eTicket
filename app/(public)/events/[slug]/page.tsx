@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getViewer } from "@/lib/supabase/server";
 import { excerpt, formatInSiteZone, siteUrl } from "@/lib/site";
 import { siteConfig } from "@/lib/siteConfig";
-import { getPublicEvent } from "@/features/events/model/publicEvents.server";
+import { getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
 
@@ -68,10 +68,21 @@ export default async function EventDetailPage({ params }: { params: Params }) {
   // Old links used the event id; send them to the slug URL.
   if (event.slug !== slug) permanentRedirect(`/events/${event.slug}`);
 
+  const [ticketTypes, host] = await Promise.all([
+    getPublicTicketTypes(event.id),
+    event.organizerId ? getPublicOrganizer(event.organizerId) : Promise.resolve(null),
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLd(event) }} />
-      <EventDetailScreen event={event} isSignedIn={Boolean(viewer)} isAdmin={viewer?.role === "admin"} />
+      <EventDetailScreen
+        event={event}
+        ticketTypes={ticketTypes}
+        host={host}
+        isSignedIn={Boolean(viewer)}
+        isAdmin={viewer?.role === "admin"}
+      />
     </>
   );
 }

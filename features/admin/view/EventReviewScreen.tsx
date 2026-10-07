@@ -49,6 +49,7 @@ function toPublicEvent(event: EventForReview): PublicEvent {
     maxTicketsPerUser: event.maxTicketsPerUser,
     status: "published",
     region: event.region,
+    organizerId: event.organizer?.userId ?? null,
   };
 }
 
@@ -83,7 +84,25 @@ export default function EventReviewScreen({ eventId }: { eventId: string }) {
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Exactly what visitors will see</p>
           <div className="theme-public max-h-[80vh] overflow-y-auto rounded-xl border border-border bg-bg text-fg">
             <div className="pointer-events-none select-none">
-              <EventDetailScreen event={toPublicEvent(event)} isSignedIn isAdmin={false} preview />
+              <EventDetailScreen
+                event={toPublicEvent(event)}
+                ticketTypes={event.ticketTypes.map((type) => ({ ...type, description: null }))}
+                host={
+                  event.organizer
+                    ? {
+                        id: event.organizer.userId,
+                        name: event.organizer.organizationName,
+                        logoUrl: event.organizer.logoUrl,
+                        description: null,
+                        website: event.organizer.website,
+                        city: null,
+                      }
+                    : null
+                }
+                isSignedIn
+                isAdmin={false}
+                preview
+              />
             </div>
           </div>
         </section>

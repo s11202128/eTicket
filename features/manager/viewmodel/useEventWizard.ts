@@ -24,6 +24,8 @@ import {
   type EventMeta,
 } from "@/features/manager/model/managerEvents.repository";
 import { useToast } from "@/components/ui/Toast";
+import type { PublicOrganizer } from "@/features/events/model/events.types";
+import { getMyApplication, organizerLogoUrl } from "@/features/organizer/model/organizer.repository";
 
 const AUTOSAVE_DELAY_MS = 1500;
 
@@ -66,6 +68,8 @@ export function useEventWizard(initialEventId: string | null) {
   const [isLoading, setIsLoading] = useState(Boolean(initialEventId));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  // "Hosted by" in the page preview.
+  const [host, setHost] = useState<PublicOrganizer | null>(null);
 
   const [step, setStep] = useState<WizardStep>("basics");
   const [errors, setErrors] = useState<WizardErrors>({});
@@ -96,6 +100,19 @@ export function useEventWizard(initialEventId: string | null) {
     listCategories()
       .then(setCategories)
       .catch(() => setCategories([]));
+    getMyApplication()
+      .then((profile) => {
+        if (!profile) return;
+        setHost({
+          id: profile.userId,
+          name: profile.organizationName,
+          logoUrl: profile.logoPath ? organizerLogoUrl(profile.logoPath) : null,
+          description: profile.description,
+          website: profile.website,
+          city: profile.city,
+        });
+      })
+      .catch(() => setHost(null));
   }, []);
 
   useEffect(() => {
@@ -336,6 +353,7 @@ export function useEventWizard(initialEventId: string | null) {
     isLoading,
     loadError,
     categories,
+    host,
     values,
     errors,
     step,

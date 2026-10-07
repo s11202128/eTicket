@@ -427,6 +427,7 @@ function previewEvent(vm: EventWizardViewModel): PublicEvent {
     maxTicketsPerUser: Number(values.maxTicketsPerUser) || 4,
     status: "published",
     region: values.region,
+    organizerId: vm.host?.id ?? null,
   };
 }
 
@@ -456,7 +457,23 @@ function MediaStep({ vm }: { vm: EventWizardViewModel }) {
       </div>
       <div className="theme-public max-h-[720px] overflow-y-auto rounded-xl border border-border bg-bg text-fg">
         <div className="pointer-events-none select-none" aria-label="Event page preview">
-          <EventDetailScreen event={previewEvent(vm)} isSignedIn isAdmin={false} preview />
+          <EventDetailScreen
+            event={previewEvent(vm)}
+            ticketTypes={values.ticketTypes.map((type) => ({
+              id: type.key,
+              name: type.name || "Unnamed ticket",
+              description: null,
+              price: Number(type.price) || 0,
+              quantity: type.quantity.trim() === "" ? null : Number(type.quantity) || null,
+              sold: type.sold,
+              salesStart: type.salesStart ? new Date(type.salesStart).toISOString() : null,
+              salesEnd: type.salesEnd ? new Date(type.salesEnd).toISOString() : null,
+            }))}
+            host={vm.host}
+            isSignedIn
+            isAdmin={false}
+            preview
+          />
         </div>
       </div>
     </>

@@ -58,5 +58,9 @@ export function managerAreaRedirect(access: Access, pathname: string): string | 
   if (isCheckIn && canUseCheckIn(access)) return null;
   if (isApprovedOrganizer(access)) return null;
 
+  // Not an organizer: admins go to their own dashboard, door staff to the
+  // scanner (the only manager page they use), everyone else to their application.
+  if (access.role === "admin") return "/admin";
+  if (access.staffEventCount > 0) return "/manager/check-in";
   return "/manager/application";
 }

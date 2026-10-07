@@ -43,8 +43,10 @@ export function TicketStub({ ticket, size = "compact", footer }: TicketStubProps
 
       <div className={cn("grid content-start gap-2", large ? "p-6 pl-8 sm:p-8 sm:pl-10" : "p-4 pl-6")}>
         <div className="flex flex-wrap items-center gap-2">
-          <TicketPhaseBadge phase={ticket.phase} />
-          {ticket.event?.status === "cancelled" && ticket.phase !== "cancelled" ? <Badge tone="danger">Event cancelled</Badge> : null}
+          {ticket.eventCancelled ? <Badge tone="danger">Event cancelled</Badge> : <TicketPhaseBadge phase={ticket.phase} />}
+          {ticket.ticketTypeName ? (
+            <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold">{ticket.ticketTypeName}</span>
+          ) : null}
         </div>
         <h2 className={cn("font-extrabold leading-tight", large ? "text-3xl" : "text-lg")}>
           {large || !ticket.event ? (

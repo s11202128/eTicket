@@ -96,8 +96,9 @@ This works from the SQL Editor because no website user is signed in there. From 
 | --- | --- |
 | `/` | Homepage: hero slider of the 5 soonest upcoming events (falls back to the Admin → Content hero when none), announcement bar, category and region chips, featured and upcoming events |
 | `/events` | All upcoming published events, with search, category, region (Solomon Islands / Across the Pacific / International) and date filters, and pagination |
-| `/events/[slug]` | Event details, seats left, badges (Sold out / Only X left), Book button. Old `/events/<id>` links redirect here |
-| `/tickets` | My tickets, with Upcoming / Past tabs (sign-in required) |
+| `/events/[slug]` | Event details with "Hosted by" (links to the organizer), ticket types with price and Sold out / Only X left / sales window per type, quantity picker and total. Old `/events/<id>` links redirect here |
+| `/organizers/[id]` | Public organizer page: logo, description, links and upcoming events |
+| `/tickets` | My tickets, with Upcoming / Past tabs; shows the ticket type and a clear "Event cancelled" state (sign-in required) |
 | `/tickets/[code]` | Ticket page: QR code, download PNG/PDF, share, add to calendar, cancel (sign-in required) |
 | `/profile` | Edit name and avatar (sign-in required) |
 | `/login`, `/signup` | Sign in / create an account. Login has a Book tickets / Manage events switch (`?mode=manager`); signup offers Book tickets or Host events (`?type=organizer`). `?next=` returns you to where you were |

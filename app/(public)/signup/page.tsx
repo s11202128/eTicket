@@ -14,7 +14,10 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
 
   // Signed-in users already have an account: organizers-to-be apply from
   // their application page (same form), everyone else goes home.
-  if (viewer) redirect(type === "organizer" ? "/manager/application" : "/");
+  if (viewer) {
+    if (type !== "organizer") redirect("/");
+    redirect(viewer.organizerStatus === "approved" ? "/manager" : "/manager/application");
+  }
 
   return <SignupScreen initialType={type} next={safeNextPath(params.next, "") || null} />;
 }

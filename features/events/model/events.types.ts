@@ -24,6 +24,18 @@ export type PublicEvent = {
   maxTicketsPerUser: number;
   status: EventStatus;
   region: EventRegion;
+  // null for events hosted by the platform itself.
+  organizerId: string | null;
+};
+
+// Public organizer info ("Hosted by" and /organizers/[id]). Phone stays private.
+export type PublicOrganizer = {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  description: string | null;
+  website: string | null;
+  city: string | null;
 };
 
 export type PublicCategory = {
