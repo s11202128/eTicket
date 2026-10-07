@@ -1,6 +1,7 @@
 -- Tests for the three-sided platform rules (pgTAP): roles, organizer
 -- applications, event ownership and review, live edits, ticket types,
--- door staff, attendee access, cancellation, audit log and completion.
+-- door staff, attendee access, cancellation, audit log, completion and the
+-- Event Manager dashboard helpers.
 --
 -- Run like booking_and_checkin.test.sql: paste into the Supabase SQL Editor,
 -- or `supabase test db`. Every test is rolled back; nothing persists.
@@ -390,6 +391,50 @@ begin
   return next is((select status from public.events where id = pg_temp.eid('other')), 'completed', 'status is completed');
   return next is(pg_temp.value_as(null, format('select count(*) from public.events where id = %L', pg_temp.eid('other'))),
     '1', 'completed events stay publicly visible');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Event Manager dashboard helpers
+-- ---------------------------------------------------------------------------
+create or replace function pg_temp.test_12_manager_dashboard() returns setof text language plpgsql as $$
+declare
+  v_code text;
+  v_live constant text := '20000000-0000-4000-9000-000000000002';
+begin
+  perform pg_temp.fixtures();
+  v_code := pg_temp.value_as(pg_temp.uid('alice'), format('select code from public.book_ticket(%L, 2)', pg_temp.tid('regular')));
+  perform pg_temp.value_as(pg_temp.uid('oscar'), format($q$select public.add_event_staff(%L, 'dora@test.invalid')$q$, v_live));
+
+  -- Organizer profile edits
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'),
+    $q$select organization_name || '|' || status from public.update_organizer_profile('Oscar Live Events', '+677 1', 'Honiara', 'https://oscar.test', array['Music'], 'We run shows.', null)$q$),
+    'Oscar Live Events|approved', 'approved organizers edit their public profile');
+  return next is(pg_temp.value_as(pg_temp.uid('alice'),
+    $q$select organization_name from public.update_organizer_profile('Alice Co')$q$),
+    'ERROR: Only approved organizers can edit their organizer profile here.', 'others cannot use the organizer profile editor');
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'),
+    format($q$select organization_name from public.update_organizer_profile('Oscar', null, null, null, '{}', null, %L)$q$, pg_temp.uid('otto') || '/logo.png')),
+    'ERROR: Upload the logo to your own folder.', 'logos must be in the organizer''s own folder');
+
+  -- Door staff list
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'), format('select string_agg(full_name || %L || email, %L) from public.list_event_staff(%L)', '|', ',', v_live)),
+    'Dora Door|dora@test.invalid', 'the organizer sees their door staff');
+  return next is(pg_temp.value_as(pg_temp.uid('otto'), format('select count(*) from public.list_event_staff(%L)', v_live)),
+    'ERROR: Only the event organizer can see door staff.', 'other organizers cannot');
+
+  -- Check-in progress
+  perform pg_temp.value_as(pg_temp.uid('dora'), format('select result from public.check_in_ticket(%L, %L)', v_code, v_live));
+  return next is(pg_temp.value_as(pg_temp.uid('dora'), format($q$select checked_in || '/' || total from public.get_check_in_progress(%L)$q$, v_live)),
+    '1/2', 'door staff see check-in progress');
+  return next is(pg_temp.value_as(pg_temp.uid('alice'), format($q$select checked_in || '/' || total from public.get_check_in_progress(%L)$q$, v_live)),
+    'ERROR: You can''t check in tickets for this event.', 'attendees cannot see check-in progress');
+
+  -- Recent bookings
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'), 'select count(*) || ''|'' || min(holder_name) from public.list_my_recent_bookings(10)'),
+    '2|Alice Attendee', 'organizers see bookings for their events');
+  return next is(pg_temp.value_as(pg_temp.uid('otto'), 'select count(*) from public.list_my_recent_bookings(10)'),
+    '0', 'and only their own events');
 end;
 $$;
 

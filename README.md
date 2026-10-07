@@ -3,6 +3,7 @@
 An event ticketing web app built with **Next.js 16** (App Router) and **Supabase** (Auth, Postgres, Storage).
 
 - **Public site**: browse events, book tickets and manage your own tickets.
+- **Event Manager** (`/manager`): approved organizers create events, sell tickets by type, follow sales and check guests in.
 - **Admin dashboard** (`/admin`): admins only. Admins control everything shown on the public site and check tickets in at the door.
 
 All permissions are enforced in the database (row-level security and database functions). The browser is never trusted.
@@ -99,7 +100,8 @@ This works from the SQL Editor because no website user is signed in there. From 
 | `/tickets` | My tickets, with Upcoming / Past tabs (sign-in required) |
 | `/tickets/[code]` | Ticket page: QR code, download PNG/PDF, share, add to calendar, cancel (sign-in required) |
 | `/profile` | Edit name and avatar (sign-in required) |
-| `/login`, `/signup` | Sign in / create an account; `?next=` returns you to where you were (e.g. the event you were booking) |
+| `/login`, `/signup` | Sign in / create an account. Login has a Book tickets / Manage events switch (`?mode=manager`); signup offers Book tickets or Host events (`?type=organizer`). `?next=` returns you to where you were |
+| `/manager/application` | Apply to host events, follow the application, edit while pending, reapply after rejection (sign-in required) |
 | `/forgot-password`, `/reset-password` | Password reset by email |
 | `/logout` | Signs out and returns to the homepage |
 | `/auth/callback` | Handles email links (exchanges the one-time code for a session) |
@@ -119,6 +121,18 @@ Redirects for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/ch
 | `/admin/categories` | admin | Create, edit and delete categories |
 | `/admin/notifications` | admin | Send a notification to all users or to one event's ticket holders |
 
+### Event Manager (`/manager`, protected on the server by `proxy.ts` and the manager layout)
+| Route | Who | Description |
+| --- | --- | --- |
+| `/manager` | organizer | Overview: tickets sold, upcoming events, check-ins today, events awaiting approval, next events, recent bookings |
+| `/manager/events` | organizer | Events by tab: Drafts, In Review, Changes Requested, Live, Past, Rejected (review notes shown) |
+| `/manager/events/new`, `/manager/events/[id]/edit` | organizer | 4-step wizard (basics, date & venue, ticket types, cover image + page preview). Drafts autosave; live events warn when a change needs another review |
+| `/manager/events/[id]` | organizer | Stats, sales chart, ticket types, attendees (search, filters, CSV), door staff, submit / request cancellation |
+| `/manager/check-in` | organizer, door staff, admin | Full-screen QR scanner for one event, live counter, sound and vibration |
+| `/manager/team` | organizer | Add or remove door staff per event |
+| `/manager/notifications` | organizer, door staff | All notifications |
+| `/manager/organization` | organizer | Public organizer profile (name, logo, description, links) |
+
 ---
 
 ## Project structure
@@ -127,10 +141,11 @@ Redirects for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/ch
 app/                 Routes only (thin pages and layouts)
   (public)/          Public site, wrapped in the public layout (header, footer)
   admin/             Admin dashboard (own layout)
+  manager/           Event Manager dashboard (own layout)
 components/ui/       Design-system components (Button, Field, Dialog, Toast, Table, …)
 features/<feature>/  model/ (data access) · viewmodel/ (hooks: state and logic) · view/ (UI)
 lib/                 Shared helpers (Supabase clients, formatting, storage, QR, PDF, …)
-proxy.ts             Server-side guard for /admin
+proxy.ts             Server-side guard for /admin, /manager, /tickets and /profile
 supabase/migrations/ Database schema, security rules and functions
 supabase/tests/      Database tests (pgTAP)
 ```

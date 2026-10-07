@@ -113,8 +113,12 @@ export async function cancelTicket(ticketId: string): Promise<TicketResult> {
   return { ok: true };
 }
 
-export async function checkInTicket(code: string): Promise<CheckInOutcome> {
-  const { data, error } = await supabase.rpc("check_in_ticket", { p_code: code });
+// Without an event id only admins may check in (any event).
+export async function checkInTicket(code: string, eventId?: string): Promise<CheckInOutcome> {
+  const { data, error } = await supabase.rpc("check_in_ticket", {
+    p_code: code,
+    ...(eventId ? { p_event_id: eventId } : {}),
+  });
   if (error) return { ok: false, errorMessage: error.message };
 
   const [row] = data;
@@ -127,6 +131,7 @@ export async function checkInTicket(code: string): Promise<CheckInOutcome> {
     eventTitle: row.event_title,
     holderName: row.holder_name,
     checkedInAt: row.checked_in_at,
+    ticketTypeName: row.ticket_type_name,
   };
 }
 

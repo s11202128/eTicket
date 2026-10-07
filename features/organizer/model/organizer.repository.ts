@@ -84,3 +84,18 @@ export async function uploadOrganizerLogo(file: File): Promise<UploadResult> {
 }
 
 export const organizerLogoUrl = (path: string) => publicImageUrl("organizer-logos", path);
+
+// Approved organizers edit their public profile (name, logo, description, links).
+export async function updateOrganizerProfile(input: OrganizerApplicationInput, logoPath: string | null): Promise<ApplyResult> {
+  const { error } = await supabase.rpc("update_organizer_profile", {
+    p_organization_name: input.organizationName,
+    p_phone: input.phone,
+    p_city: input.city ?? undefined,
+    p_website: input.website ?? undefined,
+    p_event_types: input.eventTypes,
+    p_description: input.description ?? undefined,
+    p_logo_path: logoPath ?? undefined,
+  });
+  if (error) return { ok: false, errorMessage: error.message };
+  return { ok: true };
+}

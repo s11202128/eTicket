@@ -13,6 +13,14 @@ export type CheckInDisplay = {
   holderName: string | null;
   eventTitle: string | null;
   checkedInAt: string | null;
+  ticketTypeName: string | null;
+};
+
+type ScannerOptions = {
+  // Limit check-in to one event (required for organizers and door staff).
+  eventId?: string | null;
+  // Called after every answer from the server (e.g. to refresh a counter).
+  onResult?: (display: CheckInDisplay) => void;
 };
 
 type CameraState = "off" | "starting" | "on" | "error";
@@ -21,7 +29,7 @@ type CameraState = "off" | "starting" | "on" | "error";
 // camera isn't submitted over and over.
 const REPEAT_SCAN_MS = 4000;
 
-export function useCheckInScanner() {
+export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions = {}) {
   const [code, setCode] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [display, setDisplay] = useState<CheckInDisplay | null>(null);
@@ -32,6 +40,10 @@ export function useCheckInScanner() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastScan = useRef<{ code: string; at: number }>({ code: "", at: 0 });
   const busyRef = useRef(false);
+  const optionsRef = useRef({ eventId, onResult });
+  useEffect(() => {
+    optionsRef.current = { eventId, onResult };
+  });
 
   const submit = useCallback(async (rawCode: string) => {
     const trimmed = rawCode.trim();
@@ -42,20 +54,23 @@ export function useCheckInScanner() {
     setError(null);
 
     try {
-      const outcome = await checkInTicket(trimmed);
+      const outcome = await checkInTicket(trimmed, optionsRef.current.eventId ?? undefined);
       if (!outcome.ok || !outcome.result) {
         setDisplay(null);
         setError(outcome.errorMessage ?? "Check-in failed.");
         return;
       }
-      setDisplay({
+      const next: CheckInDisplay = {
         result: outcome.result,
         code: outcome.code ?? trimmed,
         holderName: outcome.holderName ?? null,
         eventTitle: outcome.eventTitle ?? null,
         checkedInAt: outcome.checkedInAt ?? null,
-      });
+        ticketTypeName: outcome.ticketTypeName ?? null,
+      };
+      setDisplay(next);
       setCode("");
+      optionsRef.current.onResult?.(next);
       // Short buzz for valid, long for a problem (supported on most phones).
       navigator.vibrate?.(outcome.result === "valid" ? 120 : [80, 60, 220]);
     } catch {

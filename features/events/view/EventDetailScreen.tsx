@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { Markdown } from "@/components/ui/Markdown";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
 import { formatPrice } from "@/lib/format";
 import { REGION_LABELS } from "@/lib/regions";
@@ -12,6 +13,8 @@ type EventDetailScreenProps = {
   event: PublicEvent;
   isSignedIn: boolean;
   isAdmin: boolean;
+  // Organizer preview: same page, booking disabled.
+  preview?: boolean;
 };
 
 function unavailableReason(event: PublicEvent): string | null {
@@ -23,7 +26,7 @@ function unavailableReason(event: PublicEvent): string | null {
   return null;
 }
 
-export function EventDetailScreen({ event, isSignedIn, isAdmin }: EventDetailScreenProps) {
+export function EventDetailScreen({ event, isSignedIn, isAdmin, preview = false }: EventDetailScreenProps) {
   const seats =
     event.capacity === null
       ? "Plenty of seats"
@@ -70,7 +73,7 @@ export function EventDetailScreen({ event, isSignedIn, isAdmin }: EventDetailScr
           ) : null}
 
           {event.description ? (
-            <div className="max-w-prose whitespace-pre-line text-lg leading-relaxed text-muted">{event.description}</div>
+            <Markdown source={event.description} className="max-w-prose text-lg leading-relaxed text-muted" />
           ) : (
             <p className="text-muted">More details coming soon.</p>
           )}
@@ -106,12 +109,18 @@ export function EventDetailScreen({ event, isSignedIn, isAdmin }: EventDetailScr
           <div className="border-t border-border pt-5">
             <p className="text-3xl font-extrabold">{formatPrice(event.price)}</p>
             <p className="mb-4 text-xs text-muted">Up to {event.maxTicketsPerUser} tickets per person</p>
-            <BookButton
-              eventId={event.id}
-              slug={event.slug}
-              isSignedIn={isSignedIn}
-              unavailableReason={unavailableReason(event)}
-            />
+            {preview ? (
+              <p className="rounded-md bg-surface-2 px-4 py-3 text-center text-sm font-semibold text-muted">
+                Booking opens once your event is approved
+              </p>
+            ) : (
+              <BookButton
+                eventId={event.id}
+                slug={event.slug}
+                isSignedIn={isSignedIn}
+                unavailableReason={unavailableReason(event)}
+              />
+            )}
           </div>
 
           {isAdmin ? (

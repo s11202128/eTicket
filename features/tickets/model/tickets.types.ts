@@ -13,6 +13,7 @@ export type CheckInOutcome = TicketResult & {
   eventTitle?: string | null;
   holderName?: string | null;
   checkedInAt?: string | null;
+  ticketTypeName?: string | null;
 };
 
 // "upcoming": active and the event hasn't finished; "past": active but over.

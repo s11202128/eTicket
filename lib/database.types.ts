@@ -604,6 +604,10 @@ export type Database = {
           event_id: string
         }[]
       }
+      get_check_in_progress: {
+        Args: { p_event_id: string }
+        Returns: { checked_in: number; total: number }[]
+      }
       get_my_access: {
         Args: never
         Returns: {
@@ -649,6 +653,22 @@ export type Database = {
           ticket_type_name: string
         }[]
       }
+      list_event_staff: {
+        Args: { p_event_id: string }
+        Returns: { added_at: string; email: string | null; full_name: string | null; user_id: string }[]
+      }
+      list_my_recent_bookings: {
+        Args: { p_limit?: number }
+        Returns: {
+          booked_at: string
+          event_id: string
+          event_title: string
+          holder_name: string | null
+          status: string
+          ticket_id: string
+          ticket_type_name: string
+        }[]
+      }
       list_my_notifications: {
         Args: { max_rows?: number }
         Returns: {
@@ -679,6 +699,17 @@ export type Database = {
       slugify: { Args: { value: string }; Returns: string }
       submit_event_for_review: { Args: { p_event_id: string } } & ReturnsOne<EventRow, "events">
       unread_notification_count: { Args: never; Returns: number }
+      update_organizer_profile: {
+        Args: {
+          p_city?: string
+          p_description?: string
+          p_event_types?: string[]
+          p_logo_path?: string
+          p_organization_name: string
+          p_phone?: string
+          p_website?: string
+        }
+      } & ReturnsOne<OrganizerProfileRow, "organizer_profiles">
       update_published_event: {
         Args: { p_changes: Json; p_event_id: string }
         Returns: Json
