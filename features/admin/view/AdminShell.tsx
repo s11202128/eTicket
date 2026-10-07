@@ -3,24 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import type { UserRole } from "@/lib/database.types";
 import { cn } from "@/lib/cn";
 
-type NavItem = { href: string; label: string; icon: string; roles: UserRole[] };
+type NavItem = { href: string; label: string; icon: string };
 
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: "▦", roles: ["admin"] },
-  { href: "/admin/events", label: "Events", icon: "🎟", roles: ["admin"] },
-  { href: "/admin/bookings", label: "Bookings", icon: "🧾", roles: ["admin"] },
-  { href: "/admin/check-in", label: "Check-in", icon: "✔", roles: ["admin", "staff"] },
-  { href: "/admin/users", label: "Users", icon: "👥", roles: ["admin"] },
-  { href: "/admin/content", label: "Content", icon: "✎", roles: ["admin"] },
-  { href: "/admin/categories", label: "Categories", icon: "🏷", roles: ["admin"] },
-  { href: "/admin/notifications", label: "Notifications", icon: "🔔", roles: ["admin"] },
+  { href: "/admin", label: "Overview", icon: "▦" },
+  { href: "/admin/events", label: "Events", icon: "🎟" },
+  { href: "/admin/bookings", label: "Bookings", icon: "🧾" },
+  { href: "/admin/check-in", label: "Check-in", icon: "✔" },
+  { href: "/admin/users", label: "Users", icon: "👥" },
+  { href: "/admin/content", label: "Content", icon: "✎" },
+  { href: "/admin/categories", label: "Categories", icon: "🏷" },
+  { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
 ];
 
 type AdminShellProps = {
-  role: UserRole;
   name: string;
   children: ReactNode;
 };
@@ -29,14 +27,13 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AdminShell({ role, name, children }: AdminShellProps) {
+export function AdminShell({ name, children }: AdminShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const items = NAV.filter((item) => item.roles.includes(role));
 
   const nav = (
     <nav aria-label="Admin" className="grid gap-1">
-      {items.map((item) => {
+      {NAV.map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link
@@ -113,7 +110,7 @@ export function AdminShell({ role, name, children }: AdminShellProps) {
             E-Ticket <span className="text-accent-text">Admin</span>
           </p>
           <p className="mt-1 truncate text-xs text-muted">
-            {name} · <span className="capitalize">{role}</span>
+            {name} · Admin
           </p>
         </div>
         {nav}

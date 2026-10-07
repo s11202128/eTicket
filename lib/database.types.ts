@@ -366,7 +366,6 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
-      is_staff_or_admin: { Args: never; Returns: boolean }
       list_my_notifications: {
         Args: { max_rows?: number }
         Returns: {
@@ -410,7 +409,7 @@ export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =
 export type DbFunctions = PublicSchema["Functions"]
 
 // Allowed values for text columns guarded by check constraints.
-export type UserRole = "user" | "staff" | "admin"
+export type UserRole = "user" | "admin"
 export type EventStatus = "draft" | "published" | "cancelled"
 export type EventRegion = "solomon_islands" | "pacific" | "international"
 export type TicketDbStatus = "active" | "used" | "cancelled"

@@ -3,7 +3,7 @@ import type { EventStatus, TicketDbStatus, UserRole } from "@/lib/database.types
 
 const EVENT_TONES = { draft: "neutral", published: "success", cancelled: "danger" } as const;
 const TICKET_TONES = { active: "success", used: "neutral", cancelled: "danger" } as const;
-const ROLE_TONES = { user: "neutral", staff: "warning", admin: "accent" } as const;
+const ROLE_TONES = { user: "neutral", admin: "accent" } as const;
 
 export function EventStatusBadge({ status }: { status: EventStatus }) {
   return <Badge tone={EVENT_TONES[status]} className="capitalize">{status}</Badge>;

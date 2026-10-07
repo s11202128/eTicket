@@ -9,8 +9,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Second line of defence after proxy.ts: only staff and admins get the
-// admin shell. The proxy decides which admin pages staff may open.
+// Second line of defence after proxy.ts: only admins get the admin shell.
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const viewer = await getViewer();
 
@@ -18,12 +17,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/login?next=/admin");
   }
 
-  if (viewer.role !== "admin" && viewer.role !== "staff") {
+  if (viewer.role !== "admin") {
     redirect("/?notice=not-authorized");
   }
 
   return (
-    <AdminShell role={viewer.role} name={viewer.fullName || viewer.email || "Admin"}>
+    <AdminShell name={viewer.fullName || viewer.email || "Admin"}>
       {children}
     </AdminShell>
   );

@@ -73,9 +73,9 @@ function AccountMenu({ viewer }: { viewer: NonNullable<HeaderViewer> }) {
           <Link href="/tickets" className={itemClass} onClick={close}>
             My Tickets
           </Link>
-          {viewer.role === "admin" || viewer.role === "staff" ? (
-            <Link href={viewer.role === "admin" ? "/admin" : "/admin/check-in"} className={itemClass} onClick={close}>
-              {viewer.role === "admin" ? "Admin dashboard" : "Check-in"}
+          {viewer.role === "admin" ? (
+            <Link href="/admin" className={itemClass} onClick={close}>
+              Admin dashboard
             </Link>
           ) : null}
           <hr className="my-1 border-border" />

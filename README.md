@@ -3,7 +3,7 @@
 An event ticketing web app built with **Next.js 16** (App Router) and **Supabase** (Auth, Postgres, Storage).
 
 - **Public site**: browse events, book tickets and manage your own tickets.
-- **Admin dashboard** (`/admin`): admins control everything shown on the public site; staff check tickets in at the door.
+- **Admin dashboard** (`/admin`): admins only. Admins control everything shown on the public site and check tickets in at the door.
 
 All permissions are enforced in the database (row-level security and database functions). The browser is never trusted.
 
@@ -56,14 +56,15 @@ npm run lint
 | Role | Can do |
 | --- | --- |
 | `user` (default) | Browse events, book tickets, view/download/share/cancel own tickets, edit own profile |
-| `staff` | Everything a user can, plus **check in tickets** at `/admin/check-in` |
-| `admin` | Everything: events, bookings, users and roles, homepage content, categories, notifications, check-in |
+| `admin` | Everything, via the admin dashboard: events, bookings, users and roles, homepage content, categories, notifications, check-in |
+
+Only admins can open any `/admin` page (checked on the server by `proxy.ts` and the admin layout, and enforced by the database). Everyone else is sent to the homepage with a "no access" message.
 
 Rules enforced by the database:
 - Only admins can change roles. Users can't change their own, and an admin can't remove their own admin role.
 - Only admins can create, edit or delete events. Events with tickets can't be deleted (cancel them instead).
 - Tickets are only created by `book_ticket()`, which checks sign-in, that the event is published and in the future, capacity (with a row lock so the last seat can't be oversold) and the per-person limit.
-- Check-in (`check_in_ticket()`) is staff/admin only. Each ticket can be used once, and only during the event's entry window (from 6 hours before the start until the end time, or 12 hours after the start if no end time is set).
+- Check-in (`check_in_ticket()`) is admin only. Each ticket can be used once, and only during the event's entry window (from 6 hours before the start until the end time, or 12 hours after the start if no end time is set).
 
 ### Creating the first admin
 Sign up on the site, then run this in the Supabase **SQL Editor** (replace the email):
@@ -103,7 +104,7 @@ Redirects for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/ch
 | `/admin/events` | admin | Event table with search and filters; duplicate, cancel (notifies ticket holders), delete |
 | `/admin/events/new`, `/admin/events/[id]/edit` | admin | Event form with image upload and live preview |
 | `/admin/bookings` | admin | All tickets with filters, cancel, CSV export |
-| `/admin/check-in` | admin, staff | Camera QR scanner and manual code entry |
+| `/admin/check-in` | admin | Camera QR scanner and manual code entry |
 | `/admin/users` | admin | Search users and change roles |
 | `/admin/content` | admin | Homepage hero, announcement bar, featured events order |
 | `/admin/categories` | admin | Create, edit and delete categories |
@@ -148,7 +149,7 @@ This covers the homepage hero slider's event selection: only the 5 soonest upcom
 
 **Database** (pgTAP): `supabase/tests/database/booking_and_checkin.test.sql` contains pgTAP tests for the booking and check-in rules:
 - **Booking:** sign-in required, capacity, per-person limit, past and draft events, cancelling frees a seat, no direct ticket inserts.
-- **Check-in:** staff only, one use per ticket, QR payload accepted, wrong date, cancelled and unknown codes.
+- **Check-in:** admins only, one use per ticket, QR payload accepted, wrong date, cancelled and unknown codes.
 
 Run them either way:
 - **Supabase dashboard**: paste the whole file into the SQL Editor and run it. Every line should read `ok`. Each test is rolled back, so no data is left behind; the only lasting change is enabling the `pgtap` extension.

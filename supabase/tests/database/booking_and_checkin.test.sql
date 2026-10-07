@@ -25,7 +25,7 @@ create or replace function pg_temp.uid(name text) returns uuid language sql immu
     when 'alice' then '00000000-0000-4000-8000-00000000a11c'
     when 'bob'   then '00000000-0000-4000-8000-000000000b0b'
     when 'cara'  then '00000000-0000-4000-8000-00000000ca7a'
-    when 'staff' then '00000000-0000-4000-8000-00000000057a'
+    when 'admin' then '00000000-0000-4000-8000-00000000057a'
   end::uuid;
 $$;
 
@@ -44,9 +44,9 @@ begin
     (pg_temp.uid('alice'), 'alice@test.invalid', 'authenticated', 'authenticated', '{"full_name":"Alice Test"}'),
     (pg_temp.uid('bob'),   'bob@test.invalid',   'authenticated', 'authenticated', '{"full_name":"Bob Test"}'),
     (pg_temp.uid('cara'),  'cara@test.invalid',  'authenticated', 'authenticated', '{"full_name":"Cara Test"}'),
-    (pg_temp.uid('staff'), 'staff@test.invalid', 'authenticated', 'authenticated', '{"full_name":"Door Staff"}');
+    (pg_temp.uid('admin'), 'admin@test.invalid', 'authenticated', 'authenticated', '{"full_name":"Door Admin"}');
   -- No signed-in user here, so the role guard allows this.
-  update public.profiles set role = 'staff' where id = pg_temp.uid('staff');
+  update public.profiles set role = 'admin' where id = pg_temp.uid('admin');
 
   insert into public.events (id, title, slug, starts_at, location, status, capacity, max_tickets_per_user) values
     (pg_temp.eid('small'), 'Small Gig',   'test-small-gig',   now() + interval '2 days',  'Hall', 'published', 2, 1),
@@ -237,14 +237,14 @@ $$;
 -- Check-in
 -- ---------------------------------------------------------------------------
 
-create or replace function pg_temp.test_09_check_in_requires_staff() returns setof text language plpgsql as $$
+create or replace function pg_temp.test_09_check_in_requires_admin() returns setof text language plpgsql as $$
 declare
   v_code text;
 begin
   perform pg_temp.fixtures();
   v_code := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today')));
   return next is(pg_temp.try_check_in(pg_temp.uid('bob'), v_code),
-    'Only staff can check in tickets.', 'regular users cannot check tickets in');
+    'Only admins can check in tickets.', 'regular users cannot check tickets in');
 end;
 $$;
 
@@ -254,11 +254,11 @@ declare
 begin
   perform pg_temp.fixtures();
   v_code := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today')));
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), v_code),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), v_code),
     'valid|Alice Test', 'first scan is valid and shows the holder');
   return next is(
     (select status from public.tickets where code = v_code), 'used', 'ticket is marked used');
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), v_code),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), v_code),
     'already_used|Alice Test', 'second scan of the same ticket is rejected');
 end;
 $$;
@@ -269,7 +269,7 @@ declare
 begin
   perform pg_temp.fixtures();
   v_code := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today')));
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), 'eticket-' || lower(v_code)),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), 'eticket-' || lower(v_code)),
     'valid|Alice Test', 'QR payload "ETICKET-<code>" works, any letter case');
 end;
 $$;
@@ -280,18 +280,18 @@ declare
   v_cancelled text;
 begin
   perform pg_temp.fixtures();
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), 'NOTAREALCODE'),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), 'NOTAREALCODE'),
     'not_found|', 'unknown codes are invalid');
 
   v_future := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('small')));
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), v_future),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), v_future),
     'wrong_date|Alice Test', 'tickets for another day are rejected');
   return next is(
     (select status from public.tickets where code = v_future), 'active', 'a wrong-date scan leaves the ticket active');
 
   v_cancelled := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('bob'), pg_temp.eid('today')));
   update public.tickets set status = 'cancelled' where code = v_cancelled;
-  return next is(pg_temp.try_check_in(pg_temp.uid('staff'), v_cancelled),
+  return next is(pg_temp.try_check_in(pg_temp.uid('admin'), v_cancelled),
     'cancelled|Bob Test', 'cancelled tickets are rejected');
 end;
 $$;

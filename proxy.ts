@@ -5,7 +5,7 @@ import type { Database } from "@/lib/database.types";
 // Server-side guard for the admin area.
 // - Not signed in        -> /login?next=<requested path>
 // - Signed in, wrong role -> /?notice=not-authorized
-// /admin/check-in allows staff and admins; every other /admin page is admin-only.
+// Every /admin page, including check-in, is for admins only.
 // Row-level security still enforces the same rules on every query.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -47,11 +47,7 @@ export async function proxy(request: NextRequest) {
     .eq("id", data.user.id)
     .maybeSingle();
 
-  const role = profile?.role;
-  const isCheckIn = pathname === "/admin/check-in" || pathname.startsWith("/admin/check-in/");
-  const allowed = role === "admin" || (isCheckIn && role === "staff");
-
-  if (!allowed) {
+  if (profile?.role !== "admin") {
     return redirectTo("/?notice=not-authorized");
   }
 

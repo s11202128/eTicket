@@ -13,8 +13,7 @@ import { USERS_PAGE_SIZE, useAdminUsers } from "@/features/admin/viewmodel/useAd
 
 const ROLE_HELP: Record<UserRole, string> = {
   user: "can browse events and book tickets.",
-  staff: "can also check in tickets at the door.",
-  admin: "can manage everything, including other users' roles.",
+  admin: "can open the admin dashboard and manage everything, including check-in and other users' roles.",
 };
 
 export default function UsersScreen() {
@@ -23,7 +22,7 @@ export default function UsersScreen() {
 
   return (
     <>
-      <PageHeader title="Users" description="Everyone with an account. Change roles to give staff or admin access." />
+      <PageHeader title="Users" description="Everyone with an account. Only admins can open the admin dashboard." />
 
       <section aria-label="Filters" className="grid gap-3 rounded-lg border border-border bg-surface p-4 sm:grid-cols-3">
         <Field label="Search" hint="Name or email" className="sm:col-span-2">
@@ -36,7 +35,6 @@ export default function UsersScreen() {
             <Select {...props} value={vm.filters.role} onChange={(event) => vm.updateFilter("role", event.target.value as UserRole | "all")}>
               <option value="all">All roles</option>
               <option value="user">User</option>
-              <option value="staff">Staff</option>
               <option value="admin">Admin</option>
             </Select>
           )}
@@ -89,7 +87,6 @@ export default function UsersScreen() {
                         onChange={(event) => vm.requestRoleChange(user, event.target.value as UserRole)}
                       >
                         <option value="user">User</option>
-                        <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
                       </Select>
                     </Td>

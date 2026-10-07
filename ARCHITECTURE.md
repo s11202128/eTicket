@@ -20,7 +20,7 @@ This project now uses MVVM for feature modules.
 | `notifications` | — | Bell dropdown: unread count, list, mark read / mark all read |
 | `profile` | `/profile` | Name and avatar (uploaded to the `avatars` bucket) |
 | `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout`, `/auth/callback` | Email + password. Email links land on `/auth/callback`. `?next=` returns users to where they were |
-| `admin` | `/admin/*` | Admin dashboard (check-in: staff too). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
+| `admin` | `/admin/*` | Admin dashboard, admins only (including check-in). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
 
 Redirects kept for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/check-in`, `/events/<id>` → `/events/<slug>`.
 
@@ -39,7 +39,6 @@ Shared:
 | Role | Can |
 | --- | --- |
 | `user` | Browse, book, manage own tickets and profile |
-| `staff` | Everything a user can, plus `/admin/check-in` |
 | `admin` | Everything, including roles, events, content and notifications |
 
 ## Database
