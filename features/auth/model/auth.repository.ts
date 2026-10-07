@@ -105,7 +105,8 @@ export async function updatePassword(password: string): Promise<AuthResult> {
 }
 
 export async function signOut(): Promise<AuthResult> {
-  const { error } = await supabase.auth.signOut();
+  // "local": only this session (the admin and public sessions are separate).
+  const { error } = await supabase.auth.signOut({ scope: "local" });
 
   if (error) {
     return {

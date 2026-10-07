@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/lib/database.types";
+import { authCookieName, isAdminPath } from "@/lib/authCookies";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,5 +12,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Browser client. The session is stored in cookies so the server (proxy,
-// admin layout, auth callback) can read the same login.
-export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+// layouts, auth callback) can read the same login. Pages under /admin use
+// the separate admin session; moving between the admin area and the public
+// site is always a full page load, so each page gets the right client.
+const area = typeof window !== "undefined" && isAdminPath(window.location.pathname) ? "admin" : "public";
+
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+  cookieOptions: { name: authCookieName(area) },
+});

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Admin login", robots: { index: false
 
 // The only way into /admin. Not linked from the public site.
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const [params, viewer] = await Promise.all([searchParams, getViewer()]);
+  const [params, viewer] = await Promise.all([searchParams, getViewer("admin")]);
   const next = safeNextPath(params.next, "");
   const destination = next.startsWith("/admin") && next !== "/admin/login" ? next : "/admin";
   // Already signed in as an authorized admin.

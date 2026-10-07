@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { signOut } from "@/features/auth/model/auth.repository";
 
 type BadgeKey = "organizers" | "reviews" | "cancellations";
 
@@ -39,6 +40,7 @@ function isActive(pathname: string, href: string): boolean {
 
 export function AdminShell({ name, badges, children }: AdminShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const nav = (
@@ -76,24 +78,34 @@ export function AdminShell({ name, badges, children }: AdminShellProps) {
         );
       })}
       <hr className="my-2 border-border" />
-      <Link
+      {/* A plain link in a new tab: the public site uses its own session. */}
+      <a
         href="/"
+        target="_blank"
+        rel="noopener"
         className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
       >
         <span aria-hidden className="w-5 text-center">
           ↗
         </span>
         View site
-      </Link>
-      <Link
-        href="/logout?next=/admin/login"
-        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
+      </a>
+      <button
+        type="button"
+        onClick={() => {
+          // Signs out of the admin session only, then back to the admin login.
+          void signOut().finally(() => {
+            router.replace("/admin/login");
+            router.refresh();
+          });
+        }}
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
       >
         <span aria-hidden className="w-5 text-center">
           ↪
         </span>
         Log out
-      </Link>
+      </button>
     </nav>
   );
 

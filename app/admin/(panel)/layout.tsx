@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 // Second line of defence after proxy.ts: only admins get the admin shell.
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const viewer = await getViewer();
+  const viewer = await getViewer("admin");
 
   if (!viewer) {
     redirect("/admin/login");
@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/?notice=not-authorized");
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient("admin");
   const { data: counts } = await supabase.rpc("admin_queue_counts");
   const badges = {
     organizers: counts?.[0]?.pending_organizers ?? 0,

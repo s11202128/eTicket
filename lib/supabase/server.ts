@@ -1,17 +1,20 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { Database, OrganizerStatus, UserRole } from "@/lib/database.types";
+import { authCookieName, type SessionArea } from "@/lib/authCookies";
 
 // Supabase client for Server Components and Route Handlers, using the
 // signed-in user's cookies. Uses only the public key: every query still
-// goes through row-level security as that user.
-export async function createSupabaseServerClient() {
+// goes through row-level security as that user. The admin area passes
+// "admin" to use its separate session.
+export async function createSupabaseServerClient(area: SessionArea = "public") {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: authCookieName(area) },
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -40,8 +43,8 @@ export type ViewerProfile = {
 };
 
 // The verified signed-in user and their profile, or null.
-export async function getViewer(): Promise<ViewerProfile | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getViewer(area: SessionArea = "public"): Promise<ViewerProfile | null> {
+  const supabase = await createSupabaseServerClient(area);
   // getUser() validates the token with Supabase rather than trusting the cookie.
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;

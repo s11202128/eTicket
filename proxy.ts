@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database, OrganizerStatus, UserRole } from "@/lib/database.types";
 import { managerAreaRedirect, type Access } from "@/lib/access";
+import { authCookieName, isAdminPath } from "@/lib/authCookies";
 
 // Server-side route guard.
 // - /admin/login is open; it's the only way into the admin area
@@ -14,11 +15,14 @@ import { managerAreaRedirect, type Access } from "@/lib/access";
 // The database (RLS + functions) still enforces the same rules on every query.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // /admin uses its own session cookie (see lib/authCookies.ts).
+  const isAdminArea = isAdminPath(request.nextUrl.pathname);
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: authCookieName(isAdminArea ? "admin" : "public") },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -42,7 +46,6 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const { pathname, search } = request.nextUrl;
   if (pathname === "/admin/login") return response;
-  const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isManagerArea = pathname === "/manager" || pathname.startsWith("/manager/");
 
   if (!data.user) {
