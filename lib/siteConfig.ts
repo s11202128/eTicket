@@ -13,14 +13,18 @@ export const siteConfig = {
   // symbol for SBD, so we set the local "SI$" ourselves).
   currency: { code: "SBD", name: "Solomon Islands Dollars", symbol: "SI$" },
 
-  // e.g. "support@yourdomain.com"
-  contactEmail: "",
-  // e.g. "+675 123 4567"
-  contactPhone: "",
+  contactEmail: "support@eticket.com",
+  // Solomon Islands number (+677 country code, used for tap-to-call).
+  contactPhone: "+677 747 8369",
 
-  // e.g. { platform: "facebook", href: "https://facebook.com/yourpage" }
-  socials: [] as { platform: SocialPlatform; href: string }[],
+  // Paste each profile URL into href. Until then the icon is shown but isn't
+  // a link, so visitors never hit a broken page.
+  socials: [
+    { platform: "facebook", href: "" },
+    { platform: "instagram", href: "" },
+    { platform: "linkedin", href: "" },
+  ] as { platform: SocialPlatform; href: string }[],
 
-  // Only list methods you really accept, e.g. ["Visa", "Mastercard", "M-PAiSA"]
+  // Payments come later. Only list methods you really accept, e.g. ["Visa", "Mastercard"].
   acceptedPayments: [] as string[],
 };

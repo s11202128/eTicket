@@ -7,7 +7,8 @@ import { SOCIAL_LABELS } from "@/features/site/view/SocialIcon";
 export const metadata: Metadata = { title: "Contact Us" };
 
 export default function ContactPage() {
-  const { contactEmail, contactPhone, socials } = siteConfig;
+  const { contactEmail, contactPhone } = siteConfig;
+  const socials = siteConfig.socials.filter((social) => social.href);
   const hasDetails = Boolean(contactEmail || contactPhone || socials.length > 0);
 
   return (

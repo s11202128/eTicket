@@ -48,21 +48,46 @@ export function SiteFooter() {
             E<span className="text-accent">·</span>Ticket
           </Link>
           <p className="max-w-xs text-sm text-muted">{siteConfig.tagline}</p>
+          {siteConfig.contactEmail || siteConfig.contactPhone ? (
+            <address className="grid gap-1 text-sm not-italic text-muted">
+              {siteConfig.contactEmail ? (
+                <a href={`mailto:${siteConfig.contactEmail}`} className="hover:text-accent-text">
+                  {siteConfig.contactEmail}
+                </a>
+              ) : null}
+              {siteConfig.contactPhone ? (
+                <a href={`tel:${siteConfig.contactPhone.replace(/\s+/g, "")}`} className="hover:text-accent-text">
+                  {siteConfig.contactPhone}
+                </a>
+              ) : null}
+            </address>
+          ) : null}
           {socials.length > 0 ? (
             <div>
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg">Connect with Us</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {socials.map((social) => (
                   <li key={social.platform}>
-                    <a
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${SOCIAL_LABELS[social.platform]} (opens in a new tab)`}
-                      className="grid size-10 place-items-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-text"
-                    >
-                      <SocialIcon platform={social.platform} />
-                    </a>
+                    {social.href ? (
+                      <a
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${SOCIAL_LABELS[social.platform]} (opens in a new tab)`}
+                        className="grid size-10 place-items-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-text"
+                      >
+                        <SocialIcon platform={social.platform} />
+                      </a>
+                    ) : (
+                      // No URL yet: show the icon without a link.
+                      <span
+                        title={`${SOCIAL_LABELS[social.platform]} coming soon`}
+                        className="grid size-10 place-items-center rounded-full border border-border text-muted"
+                      >
+                        <SocialIcon platform={social.platform} />
+                        <span className="sr-only">{SOCIAL_LABELS[social.platform]} (coming soon)</span>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
