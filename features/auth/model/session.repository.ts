@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import type { UserRole } from "@/lib/database.types";
+import type { OrganizerStatus, UserRole } from "@/lib/database.types";
+import type { Access } from "@/lib/access";
 
 export type AuthUserProfile = {
   displayName: string;
@@ -73,4 +74,17 @@ export async function getCurrentRole(): Promise<UserRole | null> {
 
   const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
   return (data?.role as UserRole | undefined) ?? null;
+}
+
+// Role, organizer status and door-staff count in one call, for choosing where
+// to send someone after login. Null when signed out.
+export async function getMyAccess(): Promise<Access | null> {
+  const { data, error } = await supabase.rpc("get_my_access");
+  const row = data?.[0];
+  if (error || !row) return null;
+  return {
+    role: row.role as UserRole,
+    organizerStatus: (row.organizer_status as OrganizerStatus | null) ?? null,
+    staffEventCount: row.staff_event_count,
+  };
 }

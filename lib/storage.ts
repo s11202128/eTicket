@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-export type ImageBucket = "event-images" | "site-images" | "avatars";
+export type ImageBucket = "event-images" | "site-images" | "avatars" | "organizer-logos";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -9,6 +9,12 @@ export const MAX_IMAGE_BYTES: Record<ImageBucket, number> = {
   "event-images": 5 * 1024 * 1024,
   "site-images": 5 * 1024 * 1024,
   avatars: 2 * 1024 * 1024,
+  "organizer-logos": 2 * 1024 * 1024,
+};
+
+// Buckets that accept fewer types than IMAGE_TYPES (no GIF logos).
+const BUCKET_TYPES: Partial<Record<ImageBucket, string[]>> = {
+  "organizer-logos": ["image/jpeg", "image/png", "image/webp"],
 };
 
 export const FALLBACK_EVENT_IMAGE =
@@ -25,8 +31,9 @@ export function eventImageSrc(imagePath: string | null, imageUrl: string | null)
 }
 
 export function validateImage(file: File, bucket: ImageBucket): string | null {
-  if (!IMAGE_TYPES.includes(file.type)) {
-    return "Use a JPG, PNG, WebP or GIF image.";
+  const allowed = BUCKET_TYPES[bucket] ?? IMAGE_TYPES;
+  if (!allowed.includes(file.type)) {
+    return allowed.includes("image/gif") ? "Use a JPG, PNG, WebP or GIF image." : "Use a JPG, PNG or WebP image.";
   }
   if (file.size > MAX_IMAGE_BYTES[bucket]) {
     return `Images must be ${MAX_IMAGE_BYTES[bucket] / (1024 * 1024)} MB or smaller.`;

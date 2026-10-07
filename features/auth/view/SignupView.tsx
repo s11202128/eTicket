@@ -1,94 +1,159 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
-import { AuthPanel, FormMessage } from "@/features/auth/view/AuthPanel";
+import { cn } from "@/lib/cn";
+import { FormMessage } from "@/features/auth/view/AuthPanel";
+import { AuthHeading, AuthSplitLayout } from "@/features/auth/view/AuthSplitLayout";
+import { OrganizerProfileForm } from "@/features/organizer/view/OrganizerProfileForm";
+import type { SignupType, SignupViewModel } from "@/features/auth/viewmodel/useSignupViewModel";
 
-type SignupViewProps = {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  isSubmitting: boolean;
-  error: string | null;
-  successMessage: string | null;
-  isFormValid: boolean;
-  loginHref: string;
-  onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onConfirmPasswordChange: (value: string) => void;
-  onSubmit: () => Promise<void>;
-};
+const CARDS: { type: SignupType; title: string; body: string; icon: string }[] = [
+  {
+    type: "attendee",
+    title: "Book tickets",
+    body: "Find events, book in seconds and keep every ticket on your phone.",
+    icon: "🎟️",
+  },
+  {
+    type: "organizer",
+    title: "Host events",
+    body: "Sell tickets for your events, follow sales and check guests in. Reviewed by our team.",
+    icon: "🎤",
+  },
+];
 
-export function SignupView({
-  email,
-  password,
-  confirmPassword,
-  isSubmitting,
-  error,
-  successMessage,
-  isFormValid,
-  loginHref,
-  onEmailChange,
-  onPasswordChange,
-  onConfirmPasswordChange,
-  onSubmit,
-}: SignupViewProps) {
+export function SignupView(vm: SignupViewModel) {
+  const audience = vm.type === "organizer" ? "manager" : "book";
+
   return (
-    <AuthPanel
-      title="Create your account"
-      subtitle="Book tickets in seconds and keep them all in one place."
-      footer={
+    <AuthSplitLayout audience={audience}>
+      {vm.successMessage ? (
         <>
-          Already have an account?{" "}
-          <Link href={loginHref} className="font-semibold text-accent-text hover:underline">
-            Log in
-          </Link>
+          <AuthHeading title="Check your email" />
+          <FormMessage tone="success">{vm.successMessage}</FormMessage>
         </>
-      }
-    >
-      {successMessage ? (
-        <FormMessage tone="success">{successMessage}</FormMessage>
+      ) : vm.step === "choose" ? (
+        <ChooseType vm={vm} />
       ) : (
+        <SignupForm vm={vm} />
+      )}
+
+      <p className="text-center text-sm text-muted">
+        Already have an account?{" "}
+        <Link href={vm.loginHref} className="font-semibold text-accent-text hover:underline">
+          Log in
+        </Link>
+      </p>
+    </AuthSplitLayout>
+  );
+}
+
+function ChooseType({ vm }: { vm: SignupViewModel }) {
+  return (
+    <>
+      <AuthHeading title="Create your account" subtitle="What would you like to do?" />
+      <div className="grid gap-4">
+        {CARDS.map((card) => (
+          <button
+            key={card.type}
+            type="button"
+            onClick={() => vm.onChooseType(card.type)}
+            className={cn(
+              "group grid grid-cols-[auto_1fr] items-start gap-4 rounded-xl border-2 bg-surface p-6 text-left transition-colors hover:border-accent",
+              vm.type === card.type ? "border-accent" : "border-border"
+            )}
+          >
+            <span aria-hidden className="grid size-12 place-items-center rounded-lg bg-surface-2 text-2xl">
+              {card.icon}
+            </span>
+            <span className="grid gap-1">
+              <span className="text-lg font-bold">{card.title}</span>
+              <span className="text-sm text-muted">{card.body}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function SignupForm({ vm }: { vm: SignupViewModel }) {
+  const isOrganizer = vm.type === "organizer";
+  const isProfileStep = vm.step === "organization";
+
+  const title = isOrganizer ? (isProfileStep ? "About your organization" : "Host events") : "Create your account";
+  const subtitle = isOrganizer
+    ? isProfileStep
+      ? "Step 2 of 2. Our team reviews every organizer before their first event goes live."
+      : "Step 1 of 2. Your login details."
+    : "Book tickets in seconds and keep them all in one place.";
+  const submitLabel = isOrganizer ? (isProfileStep ? "Submit application" : "Continue") : "Create account";
+
+  return (
+    <>
+      <button type="button" onClick={vm.onBack} className="justify-self-start text-sm font-semibold text-muted hover:text-fg">
+        ← Back
+      </button>
+      <AuthHeading title={title} subtitle={subtitle} />
+      <div className="rounded-xl border border-border bg-surface p-6 sm:p-8">
         <form
           noValidate
           className="grid gap-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void onSubmit();
+            void vm.onSubmit();
           }}
         >
-          <Field label="Email">
-            {(props) => (
-              <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
-            )}
-          </Field>
-          <Field label="Password" hint="At least 6 characters.">
-            {(props) => (
-              <Input
-                {...props}
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(event) => onPasswordChange(event.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Confirm password">
-            {(props) => (
-              <Input
-                {...props}
-                type="password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(event) => onConfirmPasswordChange(event.target.value)}
-              />
-            )}
-          </Field>
-          {error ? <FormMessage tone="error">{error}</FormMessage> : null}
-          <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
-            Sign up
+          {isProfileStep ? (
+            <OrganizerProfileForm form={vm.organizerForm} disabled={vm.isSubmitting} />
+          ) : (
+            <AccountFields vm={vm} />
+          )}
+          {vm.error ? <FormMessage tone="error">{vm.error}</FormMessage> : null}
+          <Button type="submit" size="lg" isLoading={vm.isSubmitting}>
+            {submitLabel}
           </Button>
         </form>
-      )}
-    </AuthPanel>
+      </div>
+    </>
+  );
+}
+
+function AccountFields({ vm }: { vm: SignupViewModel }) {
+  return (
+    <>
+      <Field label="Full name" error={vm.accountErrors.fullName}>
+        {(props) => (
+          <Input {...props} autoComplete="name" value={vm.fullName} onChange={(event) => vm.onFullNameChange(event.target.value)} />
+        )}
+      </Field>
+      <Field label="Email" error={vm.accountErrors.email}>
+        {(props) => (
+          <Input {...props} type="email" autoComplete="email" value={vm.email} onChange={(event) => vm.onEmailChange(event.target.value)} />
+        )}
+      </Field>
+      <Field label="Password" hint="At least 6 characters." error={vm.accountErrors.password}>
+        {(props) => (
+          <Input
+            {...props}
+            type="password"
+            autoComplete="new-password"
+            value={vm.password}
+            onChange={(event) => vm.onPasswordChange(event.target.value)}
+          />
+        )}
+      </Field>
+      <Field label="Confirm password" error={vm.accountErrors.confirmPassword}>
+        {(props) => (
+          <Input
+            {...props}
+            type="password"
+            autoComplete="new-password"
+            value={vm.confirmPassword}
+            onChange={(event) => vm.onConfirmPasswordChange(event.target.value)}
+          />
+        )}
+      </Field>
+    </>
   );
 }

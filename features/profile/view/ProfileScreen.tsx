@@ -5,9 +5,27 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input } from "@/components/ui/Field";
 import { Skeleton } from "@/components/ui/Skeleton";
+import type { OrganizerStatus } from "@/lib/database.types";
 import { useProfileViewModel } from "@/features/profile/viewmodel/useProfileViewModel";
 
-export default function ProfileScreen() {
+const HOSTING: Record<OrganizerStatus | "none", { body: string; href: string; label: string }> = {
+  none: {
+    body: "Organize concerts, sports or community events? Apply for an organizer account to sell tickets on E-Ticket.",
+    href: "/manager/application",
+    label: "Host events",
+  },
+  pending: { body: "Your organizer application is being reviewed.", href: "/manager/application", label: "View application" },
+  rejected: {
+    body: "Your organizer application wasn't approved. You can update it and apply again.",
+    href: "/manager/application",
+    label: "Edit and reapply",
+  },
+  suspended: { body: "Your organizer account is suspended.", href: "/manager/application", label: "View details" },
+  approved: { body: "You're an approved organizer.", href: "/manager", label: "Event Manager dashboard" },
+};
+
+export default function ProfileScreen({ organizerStatus }: { organizerStatus: OrganizerStatus | null }) {
+  const hosting = HOSTING[organizerStatus ?? "none"];
   const vm = useProfileViewModel();
 
   return (
@@ -84,6 +102,16 @@ export default function ProfileScreen() {
           </form>
         </Card>
       )}
+
+      <Card className="flex flex-wrap items-center justify-between gap-4">
+        <div className="grid gap-1">
+          <h2 className="text-base font-bold">Hosting</h2>
+          <p className="text-sm text-muted">{hosting.body}</p>
+        </div>
+        <ButtonLink href={hosting.href} variant="secondary">
+          {hosting.label}
+        </ButtonLink>
+      </Card>
     </div>
   );
 }

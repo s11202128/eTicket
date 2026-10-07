@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import type { Database, UserRole } from "@/lib/database.types";
+import type { Database, OrganizerStatus, UserRole } from "@/lib/database.types";
 
 // Supabase client for Server Components and Route Handlers, using the
 // signed-in user's cookies. Uses only the public key: every query still
@@ -34,6 +34,9 @@ export type ViewerProfile = {
   fullName: string | null;
   avatarUrl: string | null;
   role: UserRole;
+  organizerStatus: OrganizerStatus | null;
+  // Door staff on at least one event (can use the check-in scanner).
+  isStaff: boolean;
 };
 
 // The verified signed-in user and their profile, or null.
@@ -43,11 +46,10 @@ export async function getViewer(): Promise<ViewerProfile | null> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, avatar_url, role")
-    .eq("id", data.user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: access }] = await Promise.all([
+    supabase.from("profiles").select("id, email, full_name, avatar_url, role").eq("id", data.user.id).maybeSingle(),
+    supabase.rpc("get_my_access"),
+  ]);
 
   if (!profile) return null;
 
@@ -57,5 +59,7 @@ export async function getViewer(): Promise<ViewerProfile | null> {
     fullName: profile.full_name,
     avatarUrl: profile.avatar_url,
     role: profile.role as UserRole,
+    organizerStatus: (access?.[0]?.organizer_status as OrganizerStatus | null | undefined) ?? null,
+    isStaff: (access?.[0]?.staff_event_count ?? 0) > 0,
   };
 }

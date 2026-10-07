@@ -27,7 +27,13 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       <SiteHeader
         viewer={
           viewer
-            ? { name: viewer.fullName || viewer.email || "Account", avatarUrl: viewer.avatarUrl, role: viewer.role }
+            ? {
+                name: viewer.fullName || viewer.email || "Account",
+                avatarUrl: viewer.avatarUrl,
+                role: viewer.role,
+                organizerStatus: viewer.organizerStatus,
+                isStaff: viewer.isStaff,
+              }
             : null
         }
       />

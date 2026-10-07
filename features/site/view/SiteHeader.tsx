@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
-import type { UserRole } from "@/lib/database.types";
+import type { OrganizerStatus, UserRole } from "@/lib/database.types";
 import { cn } from "@/lib/cn";
 import { useDismiss } from "@/lib/useDismiss";
 import { ButtonLink } from "@/components/ui/Button";
@@ -14,7 +14,28 @@ export type HeaderViewer = {
   name: string;
   avatarUrl: string | null;
   role: UserRole;
+  organizerStatus: OrganizerStatus | null;
+  isStaff: boolean;
 } | null;
+
+// "Mode" links: switch between booking, hosting and admin.
+function modeLinks(viewer: NonNullable<HeaderViewer>) {
+  const links: { href: string; label: string }[] = [];
+  if (viewer.organizerStatus === "approved") {
+    links.push({ href: "/manager", label: "Event Manager dashboard" });
+  } else if (viewer.organizerStatus) {
+    links.push({ href: "/manager/application", label: "Organizer application" });
+  } else if (viewer.role !== "admin") {
+    links.push({ href: "/manager/application", label: "Host events" });
+  }
+  if (viewer.isStaff && viewer.organizerStatus !== "approved") {
+    links.push({ href: "/manager/check-in", label: "Check-in" });
+  }
+  if (viewer.role === "admin") {
+    links.push({ href: "/admin", label: "Admin dashboard" });
+  }
+  return links;
+}
 
 const NAV = [
   { href: "/events", label: "Events" },
@@ -73,11 +94,11 @@ function AccountMenu({ viewer }: { viewer: NonNullable<HeaderViewer> }) {
           <Link href="/tickets" className={itemClass} onClick={close}>
             My Tickets
           </Link>
-          {viewer.role === "admin" ? (
-            <Link href="/admin" className={itemClass} onClick={close}>
-              Admin dashboard
+          {modeLinks(viewer).map((link) => (
+            <Link key={link.href} href={link.href} className={itemClass} onClick={close}>
+              {link.label}
             </Link>
-          ) : null}
+          ))}
           <hr className="my-1 border-border" />
           <Link href="/logout" className={itemClass} onClick={close}>
             Log out

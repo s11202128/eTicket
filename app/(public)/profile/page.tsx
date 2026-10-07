@@ -5,6 +5,6 @@ import ProfileScreen from "@/features/profile/view/ProfileScreen";
 export const metadata: Metadata = { title: "Profile", robots: { index: false } };
 
 export default async function ProfilePage() {
-  await requireViewer("/profile");
-  return <ProfileScreen />;
+  const viewer = await requireViewer("/profile");
+  return <ProfileScreen organizerStatus={viewer.organizerStatus} />;
 }

@@ -4,6 +4,7 @@ import type {
   LoginCredentials,
   SignupResult,
   SignupCredentials,
+  SignupOrganizerApplication,
 } from "@/features/auth/model/auth.types";
 
 export async function signInWithEmail(
@@ -26,12 +27,17 @@ export async function signInWithEmail(
 
 export async function signUpWithEmail(
   credentials: SignupCredentials,
-  next = "/"
+  next = "/",
+  organizerApplication?: SignupOrganizerApplication
 ): Promise<SignupResult> {
   const { data, error } = await supabase.auth.signUp({
     email: credentials.email,
     password: credentials.password,
     options: {
+      data: {
+        full_name: credentials.fullName,
+        ...(organizerApplication ? { organizer_application: organizerApplication } : {}),
+      },
       // The confirmation link signs the user in through /auth/callback.
       emailRedirectTo:
         typeof window !== "undefined"

@@ -604,6 +604,14 @@ export type Database = {
           event_id: string
         }[]
       }
+      get_my_access: {
+        Args: never
+        Returns: {
+          organizer_status: string | null
+          role: string
+          staff_event_count: number
+        }[]
+      }
       get_public_organizers: {
         Args: { p_user_ids: string[] }
         Returns: {
