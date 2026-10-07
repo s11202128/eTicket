@@ -112,6 +112,10 @@ Redirects for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/ch
 | Route | Who | Description |
 | --- | --- | --- |
 | `/admin` | admin | Overview: sales today and this week, upcoming events, events near capacity, recent bookings |
+| `/admin/reviews`, `/admin/reviews/[id]` | admin | Event review queue: public-page preview side by side with organizer info, ticket types and history; approve & publish, request changes or reject (note required) |
+| `/admin/organizers` | admin | Organizer applications by status, detail drawer; approve, reject or suspend (reason required), reinstate |
+| `/admin/cancellations` | admin | Organizer cancellation requests: cancel the event (tickets cancelled, holders notified) or decline with a note |
+| `/admin/audit` | admin | Audit log with action, type and date filters |
 | `/admin/events` | admin | Event table with search and filters; duplicate, cancel (notifies ticket holders), delete |
 | `/admin/events/new`, `/admin/events/[id]/edit` | admin | Event form with image upload and live preview |
 | `/admin/bookings` | admin | All tickets with filters, cancel, CSV export |

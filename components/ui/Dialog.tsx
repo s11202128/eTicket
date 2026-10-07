@@ -10,11 +10,13 @@ type DialogProps = {
   description?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
+  // "drawer": full-height panel on the right (detail views).
+  variant?: "center" | "drawer";
 };
 
 // Native <dialog> in modal mode: traps focus, closes on Escape and restores
 // focus to the element that opened it.
-export function Dialog({ open, onClose, title, description, children, footer }: DialogProps) {
+export function Dialog({ open, onClose, title, description, children, footer, variant = "center" }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -36,9 +38,13 @@ export function Dialog({ open, onClose, title, description, children, footer }: 
         // Clicking the backdrop (the dialog element itself) closes it.
         if (event.target === ref.current) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-surface p-0 text-fg shadow-xl backdrop:bg-black/50"
+      className={
+        variant === "drawer"
+          ? "my-0 mr-0 ml-auto h-dvh max-h-none w-full max-w-xl border-l border-border bg-surface p-0 text-fg shadow-xl backdrop:bg-black/50"
+          : "m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-surface p-0 text-fg shadow-xl backdrop:bg-black/50"
+      }
     >
-      <div className="grid gap-4 p-6">
+      <div className={variant === "drawer" ? "grid min-h-full content-start gap-5 p-6" : "grid gap-4 p-6"}>
         <h2 id={titleId} className="text-lg font-bold">
           {title}
         </h2>

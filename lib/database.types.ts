@@ -546,6 +546,10 @@ export type Database = {
         Args: { p_body?: string; p_event_id: string; p_link?: string; p_title: string }
         Returns: number
       }
+      admin_queue_counts: {
+        Args: never
+        Returns: { cancellation_requests: number; pending_events: number; pending_organizers: number }[]
+      }
       admin_set_featured_events: {
         Args: { p_event_ids: string[] }
         Returns: undefined
@@ -604,6 +608,9 @@ export type Database = {
           event_id: string
         }[]
       }
+      decline_event_cancellation: {
+        Args: { p_event_id: string; p_note: string }
+      } & ReturnsOne<EventRow, "events">
       get_check_in_progress: {
         Args: { p_event_id: string }
         Returns: { checked_in: number; total: number }[]

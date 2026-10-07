@@ -439,4 +439,41 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Admin queues
+-- ---------------------------------------------------------------------------
+create or replace function pg_temp.test_13_admin_queues() returns setof text language plpgsql as $$
+declare
+  v_live constant text := '20000000-0000-4000-9000-000000000002';
+  v_expected text;
+begin
+  perform pg_temp.fixtures();
+  -- Relative to whatever is already in the queues.
+  v_expected := format('%s|%s|%s',
+    (select count(*) + 1 from public.organizer_profiles where status = 'pending'),
+    (select count(*) from public.events where status = 'pending_review'),
+    (select count(*) + 1 from public.events where cancellation_requested and status <> 'cancelled'));
+  perform pg_temp.value_as(pg_temp.uid('olga'), $q$select status from public.apply_as_organizer('Olga Shows', '+677 2')$q$);
+  perform pg_temp.value_as(pg_temp.uid('oscar'), format($q$select status from public.request_event_cancellation(%L, 'Venue flooded')$q$, v_live));
+
+  return next is(pg_temp.value_as(pg_temp.uid('admin'),
+    $q$select pending_organizers || '|' || pending_events || '|' || cancellation_requests from public.admin_queue_counts()$q$),
+    v_expected, 'admins see queue counts');
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'), 'select pending_events from public.admin_queue_counts()'),
+    'ERROR: Admins only.', 'others cannot read queue counts');
+
+  return next is(pg_temp.value_as(pg_temp.uid('oscar'), format($q$select status from public.decline_event_cancellation(%L, 'No')$q$, v_live)),
+    'ERROR: Admins only.', 'organizers cannot decline cancellation requests');
+  return next is(pg_temp.value_as(pg_temp.uid('admin'), format($q$select status from public.decline_event_cancellation(%L, ' ')$q$, v_live)),
+    'ERROR: Tell the organizer why the event isn''t being cancelled.', 'declining needs a note');
+  return next is(pg_temp.value_as(pg_temp.uid('admin'),
+    format($q$select status || '|' || cancellation_requested from public.decline_event_cancellation(%L, 'Venue is fine now')$q$, v_live)),
+    'published|false', 'admins decline: the event stays live');
+  return next is((select count(*)::integer from public.notifications
+    where user_id = pg_temp.uid('oscar') and title = 'Cancellation request declined'), 1, 'the organizer is told');
+  return next is((select count(*)::integer from public.audit_log
+    where action = 'event.cancellation_declined' and target_id = v_live), 1, 'the decision is audited');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 select * from runtests(pg_my_temp_schema()::regnamespace::name, '^test_');

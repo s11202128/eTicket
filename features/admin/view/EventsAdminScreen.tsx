@@ -151,6 +151,11 @@ export default function EventsAdminScreen() {
                   </Td>
                   <Td>
                     <div className="flex justify-end gap-1">
+                      {event.status === "pending_review" ? (
+                        <ButtonLink href={`/admin/reviews/${event.id}`} size="sm">
+                          Review
+                        </ButtonLink>
+                      ) : null}
                       <ButtonLink href={`/admin/events/${event.id}/edit`} variant="secondary" size="sm">
                         Edit
                       </ButtonLink>

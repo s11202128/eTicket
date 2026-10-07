@@ -5,10 +5,17 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-type NavItem = { href: string; label: string; icon: string };
+type BadgeKey = "organizers" | "reviews" | "cancellations";
+
+type NavItem = { href: string; label: string; icon: string; badge?: BadgeKey };
+
+export type AdminBadges = Record<BadgeKey, number>;
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: "▦" },
+  { href: "/admin/reviews", label: "Event reviews", icon: "✅", badge: "reviews" },
+  { href: "/admin/organizers", label: "Organizers", icon: "🏢", badge: "organizers" },
+  { href: "/admin/cancellations", label: "Cancellations", icon: "🗓", badge: "cancellations" },
   { href: "/admin/events", label: "Events", icon: "🎟" },
   { href: "/admin/bookings", label: "Bookings", icon: "🧾" },
   { href: "/admin/check-in", label: "Check-in", icon: "✔" },
@@ -16,10 +23,13 @@ const NAV: NavItem[] = [
   { href: "/admin/content", label: "Content", icon: "✎" },
   { href: "/admin/categories", label: "Categories", icon: "🏷" },
   { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
+  { href: "/admin/audit", label: "Audit log", icon: "📜" },
 ];
 
 type AdminShellProps = {
   name: string;
+  // Items waiting in each queue (shown as sidebar badges).
+  badges: AdminBadges;
   children: ReactNode;
 };
 
@@ -27,7 +37,7 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AdminShell({ name, children }: AdminShellProps) {
+export function AdminShell({ name, badges, children }: AdminShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -35,6 +45,7 @@ export function AdminShell({ name, children }: AdminShellProps) {
     <nav aria-label="Admin" className="grid gap-1">
       {NAV.map((item) => {
         const active = isActive(pathname, item.href);
+        const count = item.badge ? badges[item.badge] : 0;
         return (
           <Link
             key={item.href}
@@ -50,6 +61,17 @@ export function AdminShell({ name, children }: AdminShellProps) {
               {item.icon}
             </span>
             {item.label}
+            {count > 0 ? (
+              <span
+                className={cn(
+                  "ml-auto rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                  active ? "bg-surface text-fg" : "bg-accent text-on-accent"
+                )}
+              >
+                {count}
+                <span className="sr-only"> waiting</span>
+              </span>
+            ) : null}
           </Link>
         );
       })}
