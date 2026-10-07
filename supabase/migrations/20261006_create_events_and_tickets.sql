@@ -62,7 +62,7 @@ create trigger set_events_updated_at
   before update on public.events
   for each row execute procedure public.set_updated_at();
 
--- Tickets that users book for events.
+-- Tickets that users book for events.c
 create table if not exists public.tickets (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references public.events(id) on delete cascade,

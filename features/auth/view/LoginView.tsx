@@ -1,90 +1,116 @@
 import Link from "next/link";
-import styles from "@/features/auth/view/AuthCard.module.css";
-import { isDemoMode } from "@/lib/supabase";
+import { useState } from "react";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import { FormMessage } from "@/features/auth/view/AuthPanel";
+import { AudienceToggle, AuthHeading, AuthSplitLayout } from "@/features/auth/view/AuthSplitLayout";
+import type { LoginViewModel } from "@/features/auth/viewmodel/useLoginViewModel";
 
-type LoginViewProps = {
-  email: string;
-  password: string;
-  isSubmitting: boolean;
-  error: string | null;
-  onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onSubmit: () => Promise<void>;
+const COPY = {
+  book: {
+    title: "Welcome back",
+    subtitle: "Log in to book events and see your tickets.",
+    signupPrompt: "New here?",
+    signupLink: "Create an account",
+  },
+  manager: {
+    title: "Manage your events",
+    subtitle: "Log in to your Event Manager account to run events, sales and check-in.",
+    signupPrompt: "Want to host events?",
+    signupLink: "Apply as an organizer",
+  },
 };
 
 export function LoginView({
+  mode,
   email,
   password,
   isSubmitting,
   error,
+  showApplyPrompt,
+  isFormValid,
+  signupHref,
+  onModeChange,
   onEmailChange,
   onPasswordChange,
   onSubmit,
-}: LoginViewProps) {
-  return (
-    <main className={styles.page}>
-      <Link href="/" className={styles.logo}>eTicket<span>.</span></Link>
-      <section className={styles.card}>
-        <div className={styles.left}>
-          <span className={styles.eyebrow}>WELCOME BACK</span>
-          <h1 className={styles.title}>Welcome</h1>
-          <p className={styles.intro}>Sign in to access your tickets and discover what&apos;s next.</p>
+}: LoginViewModel) {
+  const copy = COPY[mode];
+  const [showPassword, setShowPassword] = useState(false);
 
+  return (
+    <AuthSplitLayout audience={mode}>
+      <AudienceToggle value={mode} onChange={onModeChange} />
+      <AuthHeading title={copy.title} subtitle={copy.subtitle} />
+
+      {showApplyPrompt ? (
+        <div role="status" className="grid gap-3 rounded-xl border border-border bg-surface p-6">
+          <p className="font-bold">You don&apos;t have an organizer account yet.</p>
+          <p className="text-sm text-muted">
+            You&apos;re signed in and can book tickets as usual. To host events, tell us a little about your
+            organization and our team will review it.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href="/signup?type=organizer">Apply now</ButtonLink>
+            <ButtonLink href="/" variant="ghost">
+              Continue to events
+            </ButtonLink>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface p-6 sm:p-8">
           <form
-            className={styles.form}
             noValidate
+            className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               void onSubmit();
             }}
           >
-            <label className={styles.srOnly} htmlFor="email">Email</label>
-            <input
-              className={styles.input}
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-              required
-            />
-
-            <label className={styles.srOnly} htmlFor="password">Password</label>
-            <input
-              className={styles.input}
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-              placeholder="Password"
-              autoComplete="current-password"
-              required
-            />
-
-            <Link className={styles.forgot} href="/forgot-password">
+            <Field label="Email">
+              {(props) => (
+                <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+              )}
+            </Field>
+            <Field label="Password">
+              {(props) => (
+                <div className="relative">
+                  <Input
+                    {...props}
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    className="pr-16"
+                    value={password}
+                    onChange={(event) => onPasswordChange(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-muted hover:text-fg"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+              )}
+            </Field>
+            <Link href="/forgot-password" className="justify-self-end text-sm font-semibold text-accent-text hover:underline">
               Forgot password?
             </Link>
-
-            <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
-            </button>
+            {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+            <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
+              Log in
+            </Button>
           </form>
-
-          {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
-          {isDemoMode ? <p className={styles.demoNote}>Preview mode: use any email and password to enter.</p> : null}
-          <Link className={styles.adminLink} href="/admin/login">Platform administrator? <strong>Admin sign in →</strong></Link>
         </div>
+      )}
 
-        <aside className={styles.right}>
-          <span className={styles.eyebrowLight}>NEW HERE?</span>
-          <h2>Make tonight count.</h2>
-          <p className={styles.panelText}>Create an account to book and manage every experience.</p>
-          <Link className={styles.outlineButton} href="/signup">
-            SIGN UP
-          </Link>
-        </aside>
-      </section>
-    </main>
+      <p className="text-center text-sm text-muted">
+        {copy.signupPrompt}{" "}
+        <Link href={signupHref} className="font-semibold text-accent-text hover:underline">
+          {copy.signupLink}
+        </Link>
+      </p>
+    </AuthSplitLayout>
   );
 }

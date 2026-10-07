@@ -1,11 +1,14 @@
 import Link from "next/link";
-import styles from "@/features/auth/view/AuthCard.module.css";
+import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import { AuthPanel, FormMessage } from "@/features/auth/view/AuthPanel";
 
 type ForgotPasswordViewProps = {
   email: string;
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
+  isFormValid: boolean;
   onEmailChange: (value: string) => void;
   onSubmit: () => Promise<void>;
 };
@@ -15,56 +18,42 @@ export function ForgotPasswordView({
   isSubmitting,
   error,
   successMessage,
+  isFormValid,
   onEmailChange,
   onSubmit,
 }: ForgotPasswordViewProps) {
   return (
-    <main className={styles.page}>
-      <Link href="/" className={styles.logo}>eTicket<span>.</span></Link>
-      <section className={styles.card}>
-        <div className={styles.left}>
-          <span className={styles.eyebrow}>ACCOUNT ACCESS</span>
-          <h1 className={styles.title}>Reset Password</h1>
-          <p className={styles.intro}>We&apos;ll send a secure reset link to your inbox.</p>
-
-          <form
-            className={styles.form}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              void onSubmit();
-            }}
-          >
-            <label className={styles.srOnly} htmlFor="reset-email">Email</label>
-            <input
-              className={styles.input}
-              id="reset-email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-              required
-            />
-
-            <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "SENDING..." : "SEND RESET LINK"}
-            </button>
-          </form>
-
-          {error ? <p className={styles.error} role="alert" aria-live="polite">{error}</p> : null}
-          {successMessage ? <p className={styles.success} role="status">{successMessage}</p> : null}
-        </div>
-
-        <aside className={styles.right}>
-          <span className={styles.eyebrowLight}>ALL GOOD?</span>
-          <h2>Back to the fun part.</h2>
-          <p className={styles.panelText}>Return to sign in and open your member space.</p>
-          <Link className={styles.outlineButton} href="/login">
-            SIGN IN
-          </Link>
-        </aside>
-      </section>
-    </main>
+    <AuthPanel
+      title="Reset your password"
+      subtitle="We'll email you a link to choose a new one."
+      footer={
+        <Link href="/login" className="font-semibold text-accent-text hover:underline">
+          Back to log in
+        </Link>
+      }
+    >
+      {successMessage ? (
+        <FormMessage tone="success">{successMessage}</FormMessage>
+      ) : (
+        <form
+          noValidate
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSubmit();
+          }}
+        >
+          <Field label="Email">
+            {(props) => (
+              <Input {...props} type="email" autoComplete="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+            )}
+          </Field>
+          {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+          <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!isFormValid}>
+            Send reset link
+          </Button>
+        </form>
+      )}
+    </AuthPanel>
   );
 }

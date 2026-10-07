@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { requestPasswordReset } from "@/features/auth/model/auth.repository";
-import { isValidEmail } from "@/features/auth/model/auth.validation";
 
 type ForgotPasswordViewModel = {
   email: string;
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
+  isFormValid: boolean;
   onEmailChange: (value: string) => void;
   onSubmit: () => Promise<void>;
 };
@@ -19,12 +19,10 @@ export function useForgotPasswordViewModel(): ForgotPasswordViewModel {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const isFormValid = useMemo(() => email.trim().length > 0, [email]);
+
   const onSubmit = async () => {
-    if (isSubmitting) return;
-    if (!isValidEmail(email)) {
-      setError("Enter a valid email address.");
-      return;
-    }
+    if (!isFormValid || isSubmitting) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -32,7 +30,9 @@ export function useForgotPasswordViewModel(): ForgotPasswordViewModel {
 
     try {
       const redirectTo =
-        typeof window !== "undefined" ? `${window.location.origin}/update-password` : undefined;
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback?next=/reset-password`
+          : undefined;
 
       const result = await requestPasswordReset(email.trim(), redirectTo);
 
@@ -54,6 +54,7 @@ export function useForgotPasswordViewModel(): ForgotPasswordViewModel {
     isSubmitting,
     error,
     successMessage,
+    isFormValid,
     onEmailChange: setEmail,
     onSubmit,
   };

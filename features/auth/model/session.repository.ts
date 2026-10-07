@@ -1,4 +1,6 @@
-import { getSupabaseClient, isDemoMode } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import type { OrganizerStatus, UserRole } from "@/lib/database.types";
+import type { Access } from "@/lib/access";
 
 export type AuthUserProfile = {
   displayName: string;
@@ -6,17 +8,23 @@ export type AuthUserProfile = {
 };
 
 export async function hasActiveSession(): Promise<boolean> {
-  if (isDemoMode) return localStorage.getItem("eticket-demo-session") === "active";
-
-  const client = getSupabaseClient();
-  if (!client) return false;
-  const { data, error } = await client.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
 
   if (error) {
     return false;
   }
 
   return Boolean(data.session);
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error || !data.session) {
+    return null;
+  }
+
+  return data.session.user.id;
 }
 
 function normalizeDisplayName(rawName: string): string {
@@ -30,22 +38,13 @@ function normalizeDisplayName(rawName: string): string {
 }
 
 export async function getCurrentUserProfile(): Promise<AuthUserProfile | null> {
-  if (isDemoMode) {
-    return {
-      displayName: localStorage.getItem("eticket-demo-name") || "Alex Morgan",
-      avatarUrl: null,
-    };
-  }
-
-  const client = getSupabaseClient();
-  if (!client) return null;
-  const { data, error } = await client.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
     return null;
   }
 
-  const { data: profile } = await client
+  const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, avatar_url")
     .eq("id", data.user.id)
@@ -67,26 +66,25 @@ export async function getCurrentUserProfile(): Promise<AuthUserProfile | null> {
   };
 }
 
-export async function getAccessToken(): Promise<string | null> {
-  if (isDemoMode) {
-    if (localStorage.getItem("eticket-demo-session") !== "active") return null;
-    return localStorage.getItem("eticket-demo-role") === "admin"
-      ? "demo-admin-session"
-      : "demo-session";
-  }
+// The signed-in user's role, or null when signed out. For showing or hiding
+// links only; permissions are enforced by the database.
+export async function getCurrentRole(): Promise<UserRole | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
 
-  const client = getSupabaseClient();
-  if (!client) return null;
-  const { data, error } = await client.auth.getSession();
-  return error ? null : data.session?.access_token ?? null;
+  const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
+  return (data?.role as UserRole | undefined) ?? null;
 }
 
-export async function signOut(): Promise<void> {
-  if (isDemoMode) {
-    localStorage.removeItem("eticket-demo-session");
-    localStorage.removeItem("eticket-demo-role");
-    return;
-  }
-
-  await getSupabaseClient()?.auth.signOut();
+// Role, organizer status and door-staff count in one call, for choosing where
+// to send someone after login. Null when signed out.
+export async function getMyAccess(): Promise<Access | null> {
+  const { data, error } = await supabase.rpc("get_my_access");
+  const row = data?.[0];
+  if (error || !row) return null;
+  return {
+    role: row.role as UserRole,
+    organizerStatus: (row.organizer_status as OrganizerStatus | null) ?? null,
+    staffEventCount: row.staff_event_count,
+  };
 }

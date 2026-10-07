@@ -1,5 +1,8 @@
-import AdminScreen from "@/features/admin/view/AdminScreen";
+import type { Metadata } from "next";
+import OverviewScreen from "@/features/admin/view/OverviewScreen";
 
-export default function AdminPage() {
-  return <AdminScreen />;
+export const metadata: Metadata = { title: "Overview" };
+
+export default function AdminOverviewPage() {
+  return <OverviewScreen />;
 }
