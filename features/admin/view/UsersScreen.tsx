@@ -12,7 +12,8 @@ import { RoleBadge } from "@/features/admin/view/StatusBadges";
 import { USERS_PAGE_SIZE, useAdminUsers } from "@/features/admin/viewmodel/useAdminUsers";
 
 const ROLE_HELP: Record<UserRole, string> = {
-  user: "can browse events and book tickets.",
+  attendee: "can browse events and book tickets.",
+  organizer: "can host events (granted by approving an organizer application).",
   admin: "can open the admin dashboard and manage everything, including check-in and other users' roles.",
 };
 
@@ -34,7 +35,8 @@ export default function UsersScreen() {
           {(props) => (
             <Select {...props} value={vm.filters.role} onChange={(event) => vm.updateFilter("role", event.target.value as UserRole | "all")}>
               <option value="all">All roles</option>
-              <option value="user">User</option>
+              <option value="attendee">Attendee</option>
+              <option value="organizer">Organizer</option>
               <option value="admin">Admin</option>
             </Select>
           )}
@@ -86,7 +88,11 @@ export default function UsersScreen() {
                         className="h-9 w-32"
                         onChange={(event) => vm.requestRoleChange(user, event.target.value as UserRole)}
                       >
-                        <option value="user">User</option>
+                        <option value="attendee">Attendee</option>
+                        {/* Organizer status comes from approving an application. */}
+                        <option value="organizer" disabled>
+                          Organizer
+                        </option>
                         <option value="admin">Admin</option>
                       </Select>
                     </Td>

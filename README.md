@@ -55,16 +55,25 @@ npm run lint
 
 | Role | Can do |
 | --- | --- |
-| `user` (default) | Browse events, book tickets, view/download/share/cancel own tickets, edit own profile |
-| `admin` | Everything, via the admin dashboard: events, bookings, users and roles, homepage content, categories, notifications, check-in |
+| `attendee` (default) | Browse events, book tickets, view/download/share/cancel own tickets, edit own profile |
+| `organizer` | Everything an attendee can, plus host events: create drafts, submit them for approval, see their own attendees and sales, check in guests, assign door staff. Granted when an admin approves their organizer application |
+| `admin` | Everything, via the admin dashboard: approve organizers and events, bookings, users and roles, homepage content, categories, notifications, check-in. Admin-created events can be published directly |
+
+**Door staff** isn't a role: an organizer adds people (by email) as staff for a specific event, and they can check in tickets for that event only.
 
 Only admins can open any `/admin` page (checked on the server by `proxy.ts` and the admin layout, and enforced by the database). Everyone else is sent to the homepage with a "no access" message.
 
 Rules enforced by the database:
-- Only admins can change roles. Users can't change their own, and an admin can't remove their own admin role.
-- Only admins can create, edit or delete events. Events with tickets can't be deleted (cancel them instead).
-- Tickets are only created by `book_ticket()`, which checks sign-in, that the event is published and in the future, capacity (with a row lock so the last seat can't be oversold) and the per-person limit.
-- Check-in (`check_in_ticket()`) is admin only. Each ticket can be used once, and only during the event's entry window (from 6 hours before the start until the end time, or 12 hours after the start if no end time is set).
+- Only admins can change roles (approving an organizer application does it for them). Users can't change their own, and an admin can't remove their own admin role.
+- Organizer applications: `apply_as_organizer()` creates a pending application; `review_organizer()` (admin) approves, rejects (reason required) or suspends (reason required). Suspended organizers keep their live events but can't create or edit.
+- Event workflow: organizers create **drafts**, `submit_event_for_review()` checks they're complete, and `review_event()` (admin) approves (published), requests changes (note required) or rejects (note required). Organizers edit only drafts and events with changes requested; live events change through `update_published_event()`, where major changes (date, venue, prices, lower quantities) send the event back for review.
+- Cancellation: organizers ask with `request_event_cancellation()`; admins cancel with `cancel_event()`, which cancels all active tickets and notifies holders.
+- Ticket types: each event has one or more ticket types (name, price, quantity, sales window). Capacity is per type; `events.price` ("from" price) and `events.capacity` (total) are kept in sync automatically.
+- Tickets are only created by `book_ticket(ticket_type_id, quantity)`, which checks sign-in, that the event is published and upcoming, that the type is on sale and not sold out (with a row lock so the last seat can't be oversold), and the per-person limit.
+- Check-in (`check_in_ticket(code, event_id)`): admins, the event's organizer, or its door staff. Results: valid, already used, cancelled, wrong event, wrong date, not found. Each ticket works once, during the entry window (6 hours before the start until the end, or 12 hours after the start without an end time).
+- Organizers see tickets and attendee names/emails only for their own events; attendees only their own tickets.
+- Every approval, review, cancellation and staff change is written to `audit_log` (admins can read it).
+- Events that have ended become `completed` automatically (hourly `pg_cron` job).
 
 ### Creating the first admin
 Sign up on the site, then run this in the Supabase **SQL Editor** (replace the email):
@@ -147,12 +156,18 @@ npm test
 
 This covers the homepage hero slider's event selection: only the 5 soonest upcoming events, sorted soonest first, with past events, events that have already started, and invalid dates excluded. It uses mock events dated relative to "now" (`features/events/model/heroSlides.fixtures.ts`).
 
-**Database** (pgTAP): `supabase/tests/database/booking_and_checkin.test.sql` contains pgTAP tests for the booking and check-in rules:
-- **Booking:** sign-in required, capacity, per-person limit, past and draft events, cancelling frees a seat, no direct ticket inserts.
-- **Check-in:** admins only, one use per ticket, QR payload accepted, wrong date, cancelled and unknown codes.
+**Database** (pgTAP), in `supabase/tests/database/`:
+- `booking_and_checkin.test.sql`:
+  - **Booking:** sign-in required, sold-out ticket types, per-person limit, past and draft events, cancelling frees a seat, no direct ticket inserts.
+  - **Check-in:** one use per ticket, QR payload accepted, wrong date, cancelled and unknown codes, event required for non-admins.
+- `platform_workflow.test.sql`:
+  - **Roles and organizers:** roles, organizer applications and reviews.
+  - **Events:** organizer drafts, submit/review flow, live edits.
+  - **Tickets and access:** per-type capacity, door staff and wrong-event check-in, attendee visibility.
+  - **Lifecycle:** cancellation, audit log, automatic completion.
 
 Run them either way:
-- **Supabase dashboard**: paste the whole file into the SQL Editor and run it. Every line should read `ok`. Each test is rolled back, so no data is left behind; the only lasting change is enabling the `pgtap` extension.
+- **Supabase dashboard**: paste a whole file into the SQL Editor and run it. Every line should read `ok`. Each test is rolled back, so no data is left behind; the only lasting change is enabling the `pgtap` extension.
 - **Supabase CLI** (local stack): `supabase test db`
 
 ---

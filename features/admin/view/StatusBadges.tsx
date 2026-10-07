@@ -1,12 +1,30 @@
 import { Badge } from "@/components/ui/Badge";
 import type { EventStatus, TicketDbStatus, UserRole } from "@/lib/database.types";
 
-const EVENT_TONES = { draft: "neutral", published: "success", cancelled: "danger" } as const;
+export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
+  draft: "Draft",
+  pending_review: "In review",
+  changes_requested: "Changes requested",
+  published: "Published",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+  completed: "Completed",
+};
+
+const EVENT_TONES = {
+  draft: "neutral",
+  pending_review: "warning",
+  changes_requested: "warning",
+  published: "success",
+  rejected: "danger",
+  cancelled: "danger",
+  completed: "neutral",
+} as const;
 const TICKET_TONES = { active: "success", used: "neutral", cancelled: "danger" } as const;
-const ROLE_TONES = { user: "neutral", admin: "accent" } as const;
+const ROLE_TONES = { attendee: "neutral", organizer: "warning", admin: "accent" } as const;
 
 export function EventStatusBadge({ status }: { status: EventStatus }) {
-  return <Badge tone={EVENT_TONES[status]} className="capitalize">{status}</Badge>;
+  return <Badge tone={EVENT_TONES[status]}>{EVENT_STATUS_LABELS[status]}</Badge>;
 }
 
 export function TicketStatusBadge({ status }: { status: TicketDbStatus }) {

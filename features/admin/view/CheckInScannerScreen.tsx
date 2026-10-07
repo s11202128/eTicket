@@ -17,6 +17,7 @@ const RESULT_COPY: Record<CheckInResult, { label: string; detail: string }> = {
   already_used: { label: "ALREADY USED", detail: "This ticket was already checked in." },
   cancelled: { label: "CANCELLED", detail: "This ticket or event was cancelled." },
   wrong_date: { label: "WRONG DATE", detail: "This ticket isn't valid for today's entry window." },
+  wrong_event: { label: "WRONG EVENT", detail: "This ticket is for a different event." },
   not_found: { label: "INVALID", detail: "No ticket with this code." },
 };
 

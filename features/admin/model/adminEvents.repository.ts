@@ -93,6 +93,8 @@ export async function getEventSoldCount(eventId: string): Promise<number> {
   return counts.get(eventId) ?? 0;
 }
 
+// Event fields. Price and capacity live on ticket types; the database keeps
+// events.price ("from" price) and events.capacity (total) as summaries.
 function toDbFields(values: EventFormOutput) {
   return {
     title: values.title,
@@ -101,8 +103,6 @@ function toDbFields(values: EventFormOutput) {
     starts_at: new Date(values.startsAt).toISOString(),
     end_at: values.endAt ? new Date(values.endAt).toISOString() : null,
     location: values.location,
-    price: values.price,
-    capacity: values.capacity,
     max_tickets_per_user: values.maxTicketsPerUser,
     category_id: values.categoryId,
     region: values.region,
@@ -112,19 +112,48 @@ function toDbFields(values: EventFormOutput) {
   };
 }
 
+// The admin form edits a single "General Admission" ticket type. Events with
+// several ticket types keep them unchanged here.
+async function syncSingleTicketType(
+  eventId: string,
+  price: number,
+  capacity: number | null
+): Promise<ActionResult<{ skipped: boolean }>> {
+  const { data: types, error } = await supabase
+    .from("ticket_types")
+    .select("id")
+    .eq("event_id", eventId);
+  if (error) return { ok: false, errorMessage: error.message };
+
+  if (types.length > 1) return { ok: true, data: { skipped: true } };
+
+  const result =
+    types.length === 0
+      ? await supabase
+          .from("ticket_types")
+          .insert({ event_id: eventId, name: "General Admission", price, quantity: capacity })
+      : await supabase.from("ticket_types").update({ price, quantity: capacity }).eq("id", types[0].id);
+
+  if (result.error) return { ok: false, errorMessage: result.error.message };
+  return { ok: true, data: { skipped: false } };
+}
+
 export async function createAdminEvent(values: EventFormOutput): Promise<ActionResult<{ id: string }>> {
   const { data, error } = await supabase.from("events").insert(toDbFields(values)).select("id").single();
   if (error) return { ok: false, errorMessage: friendlyError(error.code, error.message) };
+
+  const tickets = await syncSingleTicketType(data.id, values.price, values.capacity);
+  if (!tickets.ok) return { ok: false, errorMessage: `Event saved, but tickets failed: ${tickets.errorMessage}` };
   return { ok: true, data: { id: data.id } };
 }
 
 // keepStatus: leave status untouched (used for cancelled events, which
-// can only be cancelled through admin_cancel_event, never re-opened here).
+// can only be cancelled through cancel_event, never re-opened here).
 export async function updateAdminEvent(
   eventId: string,
   values: EventFormOutput,
   options: { keepStatus?: boolean } = {}
-): Promise<ActionResult> {
+): Promise<ActionResult<{ ticketTypesSkipped: boolean }>> {
   const { status, ...rest } = toDbFields(values);
   const { data, error } = await supabase
     .from("events")
@@ -133,10 +162,13 @@ export async function updateAdminEvent(
     .select("id");
   if (error) return { ok: false, errorMessage: friendlyError(error.code, error.message) };
   if (data.length === 0) return { ok: false, errorMessage: "Event not found or you don't have permission." };
-  return { ok: true, data: undefined };
+
+  const tickets = await syncSingleTicketType(eventId, values.price, values.capacity);
+  if (!tickets.ok) return { ok: false, errorMessage: tickets.errorMessage };
+  return { ok: true, data: { ticketTypesSkipped: tickets.data.skipped } };
 }
 
-// Copies an event as a new draft with a unique slug.
+// Copies an event (and its ticket types) as a new draft with a unique slug.
 export async function duplicateAdminEvent(eventId: string): Promise<ActionResult<{ id: string }>> {
   const source = await getAdminEvent(eventId);
   if (!source) return { ok: false, errorMessage: "Event not found." };
@@ -151,8 +183,6 @@ export async function duplicateAdminEvent(eventId: string): Promise<ActionResult
       starts_at: source.starts_at,
       end_at: source.end_at,
       location: source.location,
-      price: source.price,
-      capacity: source.capacity,
       max_tickets_per_user: source.max_tickets_per_user,
       category_id: source.category_id,
       region: source.region,
@@ -165,13 +195,27 @@ export async function duplicateAdminEvent(eventId: string): Promise<ActionResult
     .single();
 
   if (error) return { ok: false, errorMessage: friendlyError(error.code, error.message) };
+
+  const { data: types, error: typesError } = await supabase
+    .from("ticket_types")
+    .select("name, description, price, quantity, sales_start, sales_end, sort_order")
+    .eq("event_id", eventId);
+  if (typesError) return { ok: false, errorMessage: typesError.message };
+
+  if (types.length > 0) {
+    const { error: copyError } = await supabase
+      .from("ticket_types")
+      .insert(types.map((type) => ({ ...type, event_id: data.id })));
+    if (copyError) return { ok: false, errorMessage: copyError.message };
+  }
+
   return { ok: true, data: { id: data.id } };
 }
 
 export async function cancelAdminEvent(eventId: string, reason: string): Promise<ActionResult<number>> {
-  const { data, error } = await supabase.rpc("admin_cancel_event", {
+  const { data, error } = await supabase.rpc("cancel_event", {
     p_event_id: eventId,
-    p_reason: reason.trim() || undefined,
+    p_note: reason.trim() || undefined,
   });
   if (error) return { ok: false, errorMessage: error.message };
   return { ok: true, data };

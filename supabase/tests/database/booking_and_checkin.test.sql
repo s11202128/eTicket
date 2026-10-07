@@ -1,4 +1,5 @@
 -- Tests for book_ticket, cancel_my_ticket and check_in_ticket (pgTAP).
+-- Organizer/review workflow tests: platform_workflow.test.sql
 --
 -- How to run:
 --   * Supabase dashboard: paste this whole file into the SQL Editor and run it.
@@ -53,6 +54,12 @@ begin
     (pg_temp.eid('today'), 'Tonight',     'test-tonight',     now() + interval '1 hour',  'Hall', 'published', null, 4),
     (pg_temp.eid('past'),  'Yesterday',   'test-yesterday',   now() - interval '1 hour',  'Hall', 'published', null, 4),
     (pg_temp.eid('draft'), 'Coming Soon', 'test-coming-soon', now() + interval '10 days', 'Hall', 'draft',     null, 4);
+
+  -- Capacity now lives on ticket types.
+  insert into public.ticket_types (event_id, name, price, quantity)
+  select e.id, 'General Admission', 0, e.capacity
+  from public.events e
+  where e.id in (pg_temp.eid('small'), pg_temp.eid('today'), pg_temp.eid('past'), pg_temp.eid('draft'));
 end;
 $$;
 
@@ -74,10 +81,12 @@ create or replace function pg_temp.try_book(p_user uuid, p_event uuid) returns t
 declare
   v_ticket public.tickets%rowtype;
   v_result text;
+  -- Looked up before switching user: attendees can't even see a draft's ticket types.
+  v_type uuid := (select t.id from public.ticket_types t where t.event_id = p_event order by t.sort_order limit 1);
 begin
   perform pg_temp.act_as(p_user);
   begin
-    v_ticket := public.book_ticket(p_event);
+    select * into v_ticket from public.book_ticket(v_type, 1);
     v_result := 'ok:' || v_ticket.code;
   exception when others then
     v_result := sqlerrm;
@@ -104,14 +113,14 @@ end;
 $$;
 
 -- Check in as a user. Returns '<result>|<holder>' or the error message.
-create or replace function pg_temp.try_check_in(p_user uuid, p_code text) returns text language plpgsql as $$
+create or replace function pg_temp.try_check_in(p_user uuid, p_code text, p_event uuid default null) returns text language plpgsql as $$
 declare
   v_row record;
   v_result text;
 begin
   perform pg_temp.act_as(p_user);
   begin
-    select * into v_row from public.check_in_ticket(p_code);
+    select * into v_row from public.check_in_ticket(p_code, p_event);
     v_result := v_row.result || '|' || coalesce(v_row.holder_name, '');
   exception when others then
     v_result := sqlerrm;
@@ -162,7 +171,7 @@ begin
   return next matches(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('small')), '^ok:', 'seat 1 of 2 booked');
   return next matches(pg_temp.try_book(pg_temp.uid('bob'), pg_temp.eid('small')), '^ok:', 'seat 2 of 2 booked');
   return next is(pg_temp.try_book(pg_temp.uid('cara'), pg_temp.eid('small')),
-    'This event is sold out.', 'third booking is refused when sold out');
+    'General Admission is sold out.', 'third booking is refused when sold out');
 end;
 $$;
 
@@ -243,8 +252,10 @@ declare
 begin
   perform pg_temp.fixtures();
   v_code := pg_temp.code_of(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today')));
+  return next is(pg_temp.try_check_in(pg_temp.uid('bob'), v_code, pg_temp.eid('today')),
+    'You can''t check in tickets for this event.', 'regular users cannot check tickets in');
   return next is(pg_temp.try_check_in(pg_temp.uid('bob'), v_code),
-    'Only admins can check in tickets.', 'regular users cannot check tickets in');
+    'Choose the event you are checking in for.', 'only admins may scan without choosing an event');
 end;
 $$;
 

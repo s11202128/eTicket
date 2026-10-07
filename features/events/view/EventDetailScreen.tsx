@@ -16,6 +16,7 @@ type EventDetailScreenProps = {
 
 function unavailableReason(event: PublicEvent): string | null {
   if (event.status === "cancelled") return "Event cancelled";
+  if (event.status === "completed") return "Event has ended";
   if (event.status !== "published") return "Not available";
   if (event.isPast) return "Event has started";
   if (event.isSoldOut) return "Sold out";

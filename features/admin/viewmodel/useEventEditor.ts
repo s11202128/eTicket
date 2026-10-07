@@ -188,6 +188,9 @@ export function useEventEditor(eventId?: string) {
 
     setIsDirty(false);
     toast.success(eventId ? "Event saved." : "Event created.");
+    if (result.data && "ticketTypesSkipped" in result.data && result.data.ticketTypesSkipped) {
+      toast.show("Price and capacity weren't changed: this event has several ticket types.", "info");
+    }
     router.push("/admin/events");
   };
 

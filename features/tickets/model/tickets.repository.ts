@@ -78,12 +78,33 @@ async function requireUserId(): Promise<string> {
   return userId;
 }
 
-export async function bookTicket(eventId: string): Promise<BookResult> {
-  // The database checks sign-in, availability, capacity and the per-person
-  // limit, then creates the ticket and a confirmation notification.
-  const { data, error } = await supabase.rpc("book_ticket", { p_event_id: eventId });
+export async function bookTicketType(ticketTypeId: string, quantity = 1): Promise<BookResult> {
+  // The database checks sign-in, availability, per-type capacity and the
+  // per-person limit, then creates the tickets and a confirmation notification.
+  const { data, error } = await supabase.rpc("book_ticket", {
+    p_ticket_type_id: ticketTypeId,
+    p_quantity: quantity,
+  });
   if (error) return { ok: false, errorMessage: error.message };
-  return { ok: true, code: data.code };
+  return { ok: true, code: data[0]?.code };
+}
+
+// One-click booking: the event's first ticket type whose sales window is open.
+export async function bookTicket(eventId: string): Promise<BookResult> {
+  const now = new Date().toISOString();
+  const { data: types, error } = await supabase
+    .from("ticket_types")
+    .select("id, sales_start, sales_end")
+    .eq("event_id", eventId)
+    .order("sort_order")
+    .order("price");
+  if (error) return { ok: false, errorMessage: error.message };
+
+  const onSale = types.find(
+    (type) => (!type.sales_start || type.sales_start <= now) && (!type.sales_end || type.sales_end > now)
+  );
+  if (!onSale) return { ok: false, errorMessage: "Tickets for this event aren't on sale right now." };
+  return bookTicketType(onSale.id, 1);
 }
 
 export async function cancelTicket(ticketId: string): Promise<TicketResult> {
