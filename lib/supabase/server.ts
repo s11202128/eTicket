@@ -58,7 +58,8 @@ export async function getViewer(): Promise<ViewerProfile | null> {
     email: profile.email,
     fullName: profile.full_name,
     avatarUrl: profile.avatar_url,
-    role: profile.role as UserRole,
+    // Effective role: 'admin' only for authorized admin emails.
+    role: ((access?.[0]?.role ?? profile.role) as UserRole),
     organizerStatus: (access?.[0]?.organizer_status as OrganizerStatus | null | undefined) ?? null,
     isStaff: (access?.[0]?.staff_event_count ?? 0) > 0,
   };

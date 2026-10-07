@@ -47,6 +47,8 @@ begin
     (pg_temp.uid('cara'),  'cara@test.invalid',  'authenticated', 'authenticated', '{"full_name":"Cara Test"}'),
     (pg_temp.uid('admin'), 'admin@test.invalid', 'authenticated', 'authenticated', '{"full_name":"Door Admin"}');
   -- No signed-in user here, so the role guard allows this.
+  -- Admins must be on the authorized email list.
+  insert into public.admin_emails (email) values ('admin@test.invalid') on conflict do nothing;
   update public.profiles set role = 'admin' where id = pg_temp.uid('admin');
 
   insert into public.events (id, title, slug, starts_at, location, status, capacity, max_tickets_per_user) values

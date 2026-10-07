@@ -100,7 +100,6 @@ export default function EventReviewScreen({ eventId }: { eventId: string }) {
                     : null
                 }
                 isSignedIn
-                isAdmin={false}
                 preview
               />
             </div>

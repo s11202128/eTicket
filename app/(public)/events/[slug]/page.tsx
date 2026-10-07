@@ -81,7 +81,6 @@ export default async function EventDetailPage({ params }: { params: Params }) {
         ticketTypes={ticketTypes}
         host={host}
         isSignedIn={Boolean(viewer)}
-        isAdmin={viewer?.role === "admin"}
       />
     </>
   );

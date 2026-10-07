@@ -12,7 +12,6 @@ import { TicketSelector } from "@/features/events/view/TicketSelector";
 type EventDetailScreenProps = {
   event: PublicEvent;
   isSignedIn: boolean;
-  isAdmin: boolean;
   ticketTypes: PublicTicketType[];
   // The organizer hosting the event (null for platform events).
   host: PublicOrganizer | null;
@@ -29,7 +28,7 @@ function unavailableReason(event: PublicEvent): string | null {
   return null;
 }
 
-export function EventDetailScreen({ event, isSignedIn, isAdmin, ticketTypes, host, preview = false }: EventDetailScreenProps) {
+export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, preview = false }: EventDetailScreenProps) {
   const seats =
     event.capacity === null
       ? "Plenty of seats"
@@ -145,11 +144,6 @@ export function EventDetailScreen({ event, isSignedIn, isAdmin, ticketTypes, hos
             />
           </div>
 
-          {isAdmin ? (
-            <Link href={`/admin/events/${event.id}/edit`} className="text-center text-sm font-semibold text-accent-text hover:underline">
-              Manage in admin
-            </Link>
-          ) : null}
         </aside>
       </div>
     </article>

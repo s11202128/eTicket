@@ -4,8 +4,10 @@ import type { Database, OrganizerStatus, UserRole } from "@/lib/database.types";
 import { managerAreaRedirect, type Access } from "@/lib/access";
 
 // Server-side route guard.
-// - Signed out on any guarded page -> /login?next=<path> (mode=manager for /manager)
-// - /admin/*   admins only, everyone else -> /?notice=not-authorized
+// - /admin/login is open; it's the only way into the admin area
+// - Signed out on /admin/* -> /admin/login?next=<path>
+// - Signed out on other guarded pages -> /login?next=<path> (mode=manager for /manager)
+// - /admin/*   authorized admins only, everyone else -> /?notice=not-authorized
 // - /manager/* approved organizers; /manager/check-in also for door staff and
 //   admins; everyone else -> /manager/application (their application status)
 // - /tickets, /profile: any signed-in user
@@ -39,10 +41,12 @@ export async function proxy(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
   const { pathname, search } = request.nextUrl;
+  if (pathname === "/admin/login") return response;
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isManagerArea = pathname === "/manager" || pathname.startsWith("/manager/");
 
   if (!data.user) {
+    if (isAdminArea) return redirectTo(`/admin/login?next=${encodeURIComponent(pathname + search)}`);
     const mode = isManagerArea ? "&mode=manager" : "";
     return redirectTo(`/login?next=${encodeURIComponent(pathname + search)}${mode}`);
   }
