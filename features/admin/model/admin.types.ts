@@ -1,4 +1,4 @@
-import type { EventStatus, TicketDbStatus, UserRole } from "@/lib/database.types";
+import type { EventRegion, EventStatus, TicketDbStatus, UserRole } from "@/lib/database.types";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -31,6 +31,7 @@ export type AdminEventRow = {
   isFeatured: boolean;
   categoryId: string | null;
   categoryName: string | null;
+  region: EventRegion;
   imageSrc: string;
 };
 

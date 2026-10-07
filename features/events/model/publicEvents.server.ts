@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { EventStatus } from "@/lib/database.types";
+import type { EventRegion, EventStatus } from "@/lib/database.types";
+import { regionsForFilter } from "@/lib/regions";
 import { ilikePattern, sanitizeSearch } from "@/lib/search";
 import { FALLBACK_EVENT_IMAGE } from "@/lib/storage";
 import { parseAnnouncement, parseHero } from "@/lib/siteContent";
@@ -63,6 +64,7 @@ function toPublicEvent(event: EventRow, sold: number, now: Date): PublicEvent {
     isPast: new Date(event.starts_at) <= now,
     maxTicketsPerUser: event.max_tickets_per_user,
     status: event.status as EventStatus,
+    region: event.region as EventRegion,
   };
 }
 
@@ -156,6 +158,8 @@ export async function listPublicEvents(filters: EventListFilters): Promise<{ eve
     query = query.or(`title.ilike."${pattern}",location.ilike."${pattern}"`);
   }
   if (filters.category) query = query.eq("categories.slug", filters.category);
+  const regions = regionsForFilter(filters.region);
+  if (regions) query = query.in("region", [...regions]);
   if (filters.to) query = query.lte("starts_at", filters.to);
 
   const { data, error, count } = await query;

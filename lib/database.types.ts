@@ -89,6 +89,7 @@ export type Database = {
           location: string
           max_tickets_per_user: number
           price: number
+          region: string
           slug: string
           starts_at: string
           status: string
@@ -110,6 +111,7 @@ export type Database = {
           location: string
           max_tickets_per_user?: number
           price?: number
+          region?: string
           slug: string
           starts_at: string
           status?: string
@@ -131,6 +133,7 @@ export type Database = {
           location?: string
           max_tickets_per_user?: number
           price?: number
+          region?: string
           slug?: string
           starts_at?: string
           status?: string
@@ -409,5 +412,6 @@ export type DbFunctions = PublicSchema["Functions"]
 // Allowed values for text columns guarded by check constraints.
 export type UserRole = "user" | "staff" | "admin"
 export type EventStatus = "draft" | "published" | "cancelled"
+export type EventRegion = "solomon_islands" | "pacific" | "international"
 export type TicketDbStatus = "active" | "used" | "cancelled"
 export type CheckInResult = "valid" | "already_used" | "cancelled" | "wrong_date" | "not_found"

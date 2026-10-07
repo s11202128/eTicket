@@ -1,4 +1,4 @@
-import type { EventStatus, Tables } from "@/lib/database.types";
+import type { EventRegion, EventStatus, Tables } from "@/lib/database.types";
 
 export type EventRecord = Tables<"events">;
 
@@ -23,6 +23,7 @@ export type PublicEvent = {
   isPast: boolean;
   maxTicketsPerUser: number;
   status: EventStatus;
+  region: EventRegion;
 };
 
 export type PublicCategory = {
@@ -34,6 +35,7 @@ export type PublicCategory = {
 export type EventListFilters = {
   q: string;
   category: string; // category slug, "" for all
+  region: string; // region filter id from lib/regions.ts, "" for all
   from: string; // ISO timestamp, "" for now
   to: string; // ISO timestamp, "" for no limit
   when: string; // preset label kept for the UI

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { EventStatus, Tables } from "@/lib/database.types";
+import type { EventRegion, EventStatus, Tables } from "@/lib/database.types";
 import { eventImageSrc } from "@/lib/storage";
 import { ilikePattern, pageRange, sanitizeSearch } from "@/lib/search";
 import type {
@@ -38,6 +38,7 @@ function toRow(event: EventWithCategory, sold: number): AdminEventRow {
     isFeatured: event.is_featured,
     categoryId: event.category_id,
     categoryName: event.categories?.name ?? null,
+    region: event.region as EventRegion,
     imageSrc: eventImageSrc(event.image_path, event.image_url),
   };
 }
@@ -104,6 +105,7 @@ function toDbFields(values: EventFormOutput) {
     capacity: values.capacity,
     max_tickets_per_user: values.maxTicketsPerUser,
     category_id: values.categoryId,
+    region: values.region,
     image_path: values.imagePath,
     status: values.status,
     is_featured: values.isFeatured,
@@ -153,6 +155,7 @@ export async function duplicateAdminEvent(eventId: string): Promise<ActionResult
       capacity: source.capacity,
       max_tickets_per_user: source.max_tickets_per_user,
       category_id: source.category_id,
+      region: source.region,
       image_path: source.image_path,
       image_url: source.image_url,
       status: "draft",

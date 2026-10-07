@@ -83,8 +83,8 @@ This works from the SQL Editor because no website user is signed in there. From 
 ### Public
 | Route | Description |
 | --- | --- |
-| `/` | Homepage: hero and announcement bar (from Admin → Content), category chips, featured and upcoming events |
-| `/events` | All upcoming published events, with search, category and date filters, and pagination |
+| `/` | Homepage: hero slider of the 5 soonest upcoming events (falls back to the Admin → Content hero when none), announcement bar, category and region chips, featured and upcoming events |
+| `/events` | All upcoming published events, with search, category, region (Solomon Islands / Across the Pacific / International) and date filters, and pagination |
 | `/events/[slug]` | Event details, seats left, badges (Sold out / Only X left), Book button. Old `/events/<id>` links redirect here |
 | `/tickets` | My tickets, with Upcoming / Past tabs (sign-in required) |
 | `/tickets/[code]` | Ticket page: QR code, download PNG/PDF, share, add to calendar, cancel (sign-in required) |
@@ -138,7 +138,15 @@ Every colour pair meets WCAG AA contrast. White text on the accent doesn't, so a
 
 ## Tests
 
-`supabase/tests/database/booking_and_checkin.test.sql` contains pgTAP tests for the booking and check-in rules:
+**App logic** (no extra packages; uses Node's built-in test runner):
+
+```bash
+npm test
+```
+
+This covers the homepage hero slider's event selection: only the 5 soonest upcoming events, sorted soonest first, with past events, events that have already started, and invalid dates excluded. It uses mock events dated relative to "now" (`features/events/model/heroSlides.fixtures.ts`).
+
+**Database** (pgTAP): `supabase/tests/database/booking_and_checkin.test.sql` contains pgTAP tests for the booking and check-in rules:
 - **Booking:** sign-in required, capacity, per-person limit, past and draft events, cancelling frees a seat, no direct ticket inserts.
 - **Check-in:** staff only, one use per ticket, QR payload accepted, wrong date, cancelled and unknown codes.
 

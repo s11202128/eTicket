@@ -19,6 +19,7 @@ import {
 } from "@/features/admin/model/eventForm.schema";
 import type { Category } from "@/features/admin/model/admin.types";
 import type { EventStatus } from "@/lib/database.types";
+import { isEventRegion } from "@/lib/regions";
 
 const EMPTY_FORM: EventFormInput = {
   title: "",
@@ -31,6 +32,7 @@ const EMPTY_FORM: EventFormInput = {
   capacity: "",
   maxTicketsPerUser: "4",
   categoryId: "",
+  region: "solomon_islands",
   imagePath: null,
   status: "draft",
   isFeatured: false,
@@ -84,6 +86,7 @@ export function useEventEditor(eventId?: string) {
             capacity: event.capacity === null ? "" : String(event.capacity),
             maxTicketsPerUser: String(event.max_tickets_per_user),
             categoryId: event.category_id ?? "",
+            region: isEventRegion(event.region) ? event.region : "solomon_islands",
             imagePath: event.image_path,
             // Cancelled events are edited as published; cancelling is its own action.
             status: event.status === "draft" ? "draft" : "published",

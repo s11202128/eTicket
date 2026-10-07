@@ -9,6 +9,8 @@ import { Field, Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { FALLBACK_EVENT_IMAGE } from "@/lib/storage";
+import { REGIONS } from "@/lib/regions";
+import type { EventFormInput } from "@/features/admin/model/eventForm.schema";
 import { siteConfig } from "@/lib/siteConfig";
 import { ErrorState, PageHeader } from "@/features/admin/view/AdminUi";
 import { EventStatusBadge } from "@/features/admin/view/StatusBadges";
@@ -118,7 +120,22 @@ export default function EventEditorScreen() {
                 <Input {...props} type="datetime-local" value={values.endAt} onChange={(event) => vm.setField("endAt", event.target.value)} />
               )}
             </Field>
-            <Field label="Location" required error={errors.location} className="sm:col-span-2">
+            <Field label="Region" required hint="Used by the region filter on the events page." error={errors.region}>
+              {(props) => (
+                <Select
+                  {...props}
+                  value={values.region}
+                  onChange={(event) => vm.setField("region", event.target.value as EventFormInput["region"])}
+                >
+                  {REGIONS.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Location" required error={errors.location}>
               {(props) => (
                 <Input {...props} value={values.location} maxLength={200} onChange={(event) => vm.setField("location", event.target.value)} />
               )}

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
 import type { PublicCategory } from "@/features/events/model/events.types";
+import { REGION_FILTERS } from "@/lib/regions";
 
 export const DATE_PRESETS = [
   { id: "", label: "Any date" },
@@ -45,19 +46,21 @@ function presetRange(preset: string): { from: string; to: string } {
 
 type EventFiltersProps = {
   categories: PublicCategory[];
-  initial: { q: string; category: string; when: string };
+  initial: { q: string; category: string; region: string; when: string };
 };
 
 export function EventFilters({ categories, initial }: EventFiltersProps) {
   const router = useRouter();
   const [q, setQ] = useState(initial.q);
   const [category, setCategory] = useState(initial.category);
+  const [region, setRegion] = useState(initial.region);
   const [when, setWhen] = useState(initial.when);
 
-  const apply = (next: { q: string; category: string; when: string }) => {
+  const apply = (next: { q: string; category: string; region: string; when: string }) => {
     const params = new URLSearchParams();
     if (next.q.trim()) params.set("q", next.q.trim());
     if (next.category) params.set("category", next.category);
+    if (next.region) params.set("region", next.region);
     if (next.when) {
       const range = presetRange(next.when);
       params.set("when", next.when);
@@ -70,16 +73,16 @@ export function EventFilters({ categories, initial }: EventFiltersProps) {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    apply({ q, category, when });
+    apply({ q, category, region, when });
   };
 
-  const hasFilters = initial.q || initial.category || initial.when;
+  const hasFilters = initial.q || initial.category || initial.region || initial.when;
 
   return (
     <form
       role="search"
       onSubmit={onSubmit}
-      className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end"
+      className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 sm:items-end lg:grid-cols-[2fr_1fr_1fr_1fr_auto]"
     >
       <Field label="Search">
         {(props) => (
@@ -101,13 +104,32 @@ export function EventFilters({ categories, initial }: EventFiltersProps) {
             value={category}
             onChange={(event) => {
               setCategory(event.target.value);
-              apply({ q, category: event.target.value, when });
+              apply({ q, category: event.target.value, region, when });
             }}
           >
             <option value="">All categories</option>
             {categories.map((item) => (
               <option key={item.id} value={item.slug}>
                 {item.name}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+      <Field label="Region">
+        {(props) => (
+          <Select
+            {...props}
+            name="region"
+            value={region}
+            onChange={(event) => {
+              setRegion(event.target.value);
+              apply({ q, category, region: event.target.value, when });
+            }}
+          >
+            {REGION_FILTERS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
               </option>
             ))}
           </Select>
@@ -121,7 +143,7 @@ export function EventFilters({ categories, initial }: EventFiltersProps) {
             value={when}
             onChange={(event) => {
               setWhen(event.target.value);
-              apply({ q, category, when: event.target.value });
+              apply({ q, category, region, when: event.target.value });
             }}
           >
             {DATE_PRESETS.map((preset) => (
@@ -140,6 +162,7 @@ export function EventFilters({ categories, initial }: EventFiltersProps) {
             onClick={() => {
               setQ("");
               setCategory("");
+              setRegion("");
               setWhen("");
               router.push("/events");
             }}

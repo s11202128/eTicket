@@ -6,6 +6,7 @@ import {
 } from "@/features/events/model/publicEvents.server";
 import type { EventListFilters } from "@/features/events/model/events.types";
 import { EventsListScreen } from "@/features/events/view/EventsListScreen";
+import { regionsForFilter } from "@/lib/regions";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -28,6 +29,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Searc
   const filters: EventListFilters = {
     q: one(params.q).slice(0, 100),
     category: one(params.category).slice(0, 60),
+    region: regionsForFilter(one(params.region)) ? one(params.region) : "",
     when: one(params.when).slice(0, 20),
     from: isoOrEmpty(one(params.from)),
     to: isoOrEmpty(one(params.to)),

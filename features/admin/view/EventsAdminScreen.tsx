@@ -9,6 +9,7 @@ import { SkeletonRows } from "@/components/ui/Skeleton";
 import { Table, TBody, Td, Th, THead } from "@/components/ui/Table";
 import type { EventStatus } from "@/lib/database.types";
 import { formatDateTime, formatPrice } from "@/lib/format";
+import { REGION_LABELS } from "@/lib/regions";
 import { ErrorState, PageHeader, Pagination } from "@/features/admin/view/AdminUi";
 import { CapacityMeter, EventStatusBadge } from "@/features/admin/view/StatusBadges";
 import { EVENTS_PAGE_SIZE, useAdminEvents } from "@/features/admin/viewmodel/useAdminEvents";
@@ -132,7 +133,7 @@ export default function EventsAdminScreen() {
                       {event.title}
                     </Link>
                     <p className="text-xs text-muted">
-                      {event.categoryName ?? "Uncategorised"}
+                      {event.categoryName ?? "Uncategorised"} · {REGION_LABELS[event.region]}
                       {event.isFeatured ? " · ★ Featured" : ""}
                     </p>
                   </Td>

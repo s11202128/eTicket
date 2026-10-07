@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
 import { formatPrice } from "@/lib/format";
+import { REGION_LABELS } from "@/lib/regions";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { BookButton } from "@/features/events/view/BookButton";
 import { AvailabilityBadge, canOptimize } from "@/features/events/view/EventPoster";
@@ -93,6 +94,7 @@ export function EventDetailScreen({ event, isSignedIn, isAdmin }: EventDetailScr
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-muted">Where</dt>
               <dd className="mt-1 font-semibold">{event.location}</dd>
+              <dd className="text-sm text-muted">{REGION_LABELS[event.region]}</dd>
             </div>
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-muted">Seats</dt>

@@ -37,6 +37,7 @@ export const eventFormSchema = z
       })
       .transform(Number),
     categoryId: z.string().transform((value) => (value === "" ? null : value)),
+    region: z.enum(["solomon_islands", "pacific", "international"], { message: "Choose a region." }),
     imagePath: z.string().nullable(),
     status: z.enum(["draft", "published"]),
     isFeatured: z.boolean(),
