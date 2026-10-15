@@ -110,7 +110,7 @@ export function AdminShell({ name, badges, children }: AdminShellProps) {
   );
 
   return (
-    <div className="min-h-screen bg-bg text-fg lg:grid lg:grid-cols-[240px_1fr]">
+    <div className="min-h-dvh bg-bg text-fg lg:grid lg:grid-cols-[240px_1fr]">
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2"
@@ -138,7 +138,7 @@ export function AdminShell({ name, badges, children }: AdminShellProps) {
       ) : null}
 
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen flex-col gap-6 border-r border-border bg-surface p-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-border bg-surface p-4 lg:flex">
         <div>
           <p className="text-lg font-extrabold">
             E-Ticket <span className="text-accent-text">Admin</span>

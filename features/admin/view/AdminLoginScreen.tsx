@@ -12,7 +12,7 @@ export default function AdminLoginScreen({ next }: { next: string | null }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <main className="grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
+    <main className="grid min-h-dvh place-items-center bg-bg px-4 py-12 text-fg">
       <div className="grid w-full max-w-sm gap-6">
         <div className="grid gap-1 text-center">
           <p className="text-2xl font-extrabold tracking-tight">

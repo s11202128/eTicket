@@ -4,7 +4,7 @@ import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttribu
 import { cn } from "@/lib/cn";
 
 const CONTROL =
-  "w-full rounded-md border border-border bg-surface px-3 text-sm text-fg placeholder:text-muted focus:border-fg focus:outline-none focus-visible:outline-2 focus-visible:outline-ring disabled:bg-surface-2 disabled:text-muted aria-[invalid=true]:border-danger";
+  "w-full rounded-md border border-border bg-surface px-3 text-base text-fg sm:text-sm placeholder:text-muted focus:border-fg focus:outline-none focus-visible:outline-2 focus-visible:outline-ring disabled:bg-surface-2 disabled:text-muted aria-[invalid=true]:border-danger";
 
 type FieldProps = {
   label: string;
@@ -44,7 +44,7 @@ export function Field({ label, hint, error, required, className, children }: Fie
 }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cn(CONTROL, "h-10", className)} {...props} />;
+  return <input className={cn(CONTROL, "h-11 sm:h-10", className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
@@ -53,7 +53,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(CONTROL, "h-10 pr-8", className)} {...props}>
+    <select className={cn(CONTROL, "h-11 pr-8 sm:h-10", className)} {...props}>
       {children}
     </select>
   );

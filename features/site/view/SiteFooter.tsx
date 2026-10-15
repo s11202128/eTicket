@@ -22,10 +22,10 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
       <h2 id={id} className="text-sm font-bold uppercase tracking-wider text-fg">
         {title}
       </h2>
-      <ul className="mt-4 grid gap-2.5">
+      <ul className="mt-3 grid gap-0.5">
         {links.map((link) => (
           <li key={link.href}>
-            <Link href={link.href} className="text-sm text-muted transition-colors hover:text-accent-text">
+            <Link href={link.href} className="inline-block py-1.5 text-sm text-muted transition-colors hover:text-accent-text">
               {link.label}
             </Link>
           </li>
@@ -49,14 +49,14 @@ export function SiteFooter() {
           </Link>
           <p className="max-w-xs text-sm text-muted">{siteConfig.tagline}</p>
           {siteConfig.contactEmail || siteConfig.contactPhone ? (
-            <address className="grid gap-1 text-sm not-italic text-muted">
+            <address className="grid text-sm not-italic text-muted">
               {siteConfig.contactEmail ? (
-                <a href={`mailto:${siteConfig.contactEmail}`} className="hover:text-accent-text">
+                <a href={`mailto:${siteConfig.contactEmail}`} className="inline-block py-1.5 hover:text-accent-text">
                   {siteConfig.contactEmail}
                 </a>
               ) : null}
               {siteConfig.contactPhone ? (
-                <a href={`tel:${siteConfig.contactPhone.replace(/\s+/g, "")}`} className="hover:text-accent-text">
+                <a href={`tel:${siteConfig.contactPhone.replace(/\s+/g, "")}`} className="inline-block py-1.5 hover:text-accent-text">
                   {siteConfig.contactPhone}
                 </a>
               ) : null}

@@ -24,7 +24,7 @@ export function AuthSplitLayout({ audience, children }: { audience: AuthAudience
   const art = ARTWORK[audience];
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-0 px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-2 lg:gap-10 lg:py-10">
+    <div className="mx-auto grid max-w-6xl gap-0 px-4 py-8 sm:px-6 lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-2 lg:gap-10 lg:py-10">
       <div className="relative hidden overflow-hidden rounded-2xl lg:block">
         <Image
           key={art.src}

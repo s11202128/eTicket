@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { buttonClasses } from "@/components/ui/Button";
 import { Markdown } from "@/components/ui/Markdown";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
+import { formatPrice } from "@/lib/format";
 import { REGION_LABELS } from "@/lib/regions";
 import type { PublicEvent, PublicOrganizer } from "@/features/events/model/events.types";
-import type { PublicTicketType } from "@/features/events/model/ticketAvailability";
+import { typeAvailability, type PublicTicketType } from "@/features/events/model/ticketAvailability";
 import { AvailabilityBadge, canOptimize } from "@/features/events/view/EventPoster";
 import { TicketSelector } from "@/features/events/view/TicketSelector";
 
@@ -36,6 +38,10 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
         ? "Sold out"
         : `${event.spotsLeft} of ${event.capacity} seats left`;
 
+  // Phones: a bar pinned to the bottom jumps to the booking panel below the description.
+  const onSale = ticketTypes.filter((type) => typeAvailability(type, new Date()).state === "on_sale");
+  const showBookBar = !preview && !unavailableReason(event) && onSale.length > 0;
+
   return (
     <article>
       <div className="relative isolate">
@@ -53,8 +59,8 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
         </div>
       </div>
 
-      <div className="mx-auto -mt-24 grid max-w-6xl gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[1fr_360px]">
-        <div className="relative grid content-start gap-5">
+      <div className={`mx-auto -mt-24 grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:pb-16 ${showBookBar ? "pb-28" : "pb-16"}`}>
+        <div className="relative grid min-w-0 content-start gap-5">
           <div className="flex flex-wrap gap-2">
             {event.categoryName && event.categorySlug ? (
               <Link
@@ -66,7 +72,7 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
             ) : null}
             {event.status === "cancelled" ? <Badge tone="danger">Cancelled</Badge> : <AvailabilityBadge event={event} />}
           </div>
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">{event.title}</h1>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight break-words sm:text-5xl">{event.title}</h1>
 
           {host ? (
             <Link
@@ -100,13 +106,13 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
           ) : null}
 
           {event.description ? (
-            <Markdown source={event.description} className="max-w-prose text-lg leading-relaxed text-muted" />
+            <Markdown source={event.description} className="max-w-prose break-words text-base leading-relaxed text-muted sm:text-lg" />
           ) : (
             <p className="text-muted">More details coming soon.</p>
           )}
         </div>
 
-        <aside className="relative grid content-start gap-5 rounded-xl border border-border bg-surface p-6 lg:sticky lg:top-24">
+        <aside id="book" className="relative grid scroll-mt-20 content-start gap-5 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:sticky lg:top-24">
           <dl className="grid gap-4">
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-muted">When</dt>
@@ -146,6 +152,19 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
 
         </aside>
       </div>
+
+      {showBookBar ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 px-4 py-3 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+            <p className="text-sm text-muted">
+              From <span className="text-lg font-extrabold text-fg tabular-nums">{formatPrice(Math.min(...onSale.map((type) => type.price)))}</span>
+            </p>
+            <a href="#book" className={buttonClasses("primary", "lg")}>
+              Get tickets
+            </a>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }
