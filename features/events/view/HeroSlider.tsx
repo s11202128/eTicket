@@ -178,7 +178,7 @@ export function HeroSlider({ events, renderedAt }: HeroSliderProps) {
                 </svg>
               )}
             </button>
-            <div role="group" aria-label="Choose slide" className="flex items-center gap-2">
+            <div role="group" aria-label="Choose slide" className="flex items-center">
               {vm.slides.map((event, slideIndex) => {
                 const isActive = slideIndex === vm.current;
                 return (
@@ -188,7 +188,7 @@ export function HeroSlider({ events, renderedAt }: HeroSliderProps) {
                     onClick={() => vm.goTo(slideIndex)}
                     aria-label={`Go to slide ${slideIndex + 1}: ${event.title}`}
                     aria-current={isActive ? "true" : undefined}
-                    className="grid size-6 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-white"
+                    className="grid h-10 min-w-8 place-items-center rounded-full px-1 focus-visible:outline-2 focus-visible:outline-white"
                   >
                     <span
                       aria-hidden

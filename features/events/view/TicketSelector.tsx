@@ -36,6 +36,27 @@ function AvailabilityNote({ availability }: { availability: TypeAvailability }) 
   }
 }
 
+// Why an option can't be picked, shown in the dropdown.
+function unavailableLabel(availability: TypeAvailability): string {
+  switch (availability.state) {
+    case "sold_out":
+      return " (sold out)";
+    case "ended":
+      return " (sales ended)";
+    case "not_started":
+      return " (not on sale yet)";
+    case "on_sale":
+      return "";
+  }
+}
+
+// Button text when no ticket type can be booked right now.
+function noneAvailableLabel(availabilities: TypeAvailability[]): string {
+  if (availabilities.some((availability) => availability.state === "not_started")) return "Not on sale yet";
+  if (availabilities.every((availability) => availability.state === "ended")) return "Sales ended";
+  return "Sold out";
+}
+
 // Booking panel: choose a ticket type and quantity, see the total, book.
 export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailableReason, preview = false }: Props) {
   const vm = useTicketSelection({ types, perPerson, slug, isSignedIn });
@@ -56,10 +77,10 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
           <Select {...props} value={vm.selectedId ?? ""} onChange={(event) => vm.select(event.target.value)}>
             {!vm.selected ? <option value="">Select a ticket type</option> : null}
             {types.map((type) => {
-              const available = typeAvailability(type, vm.now).state === "on_sale";
+              const availability = typeAvailability(type, vm.now);
               return (
-                <option key={type.id} value={type.id} disabled={!available}>
-                  {`${type.name} · ${formatPrice(type.price)}${available ? "" : " (unavailable)"}`}
+                <option key={type.id} value={type.id} disabled={availability.state !== "on_sale"}>
+                  {`${type.name} · ${formatPrice(type.price)}${unavailableLabel(availability)}`}
                 </option>
               );
             })}
@@ -97,11 +118,15 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
         </div>
       ) : null}
 
-      <div className="flex items-baseline justify-between border-t border-border pt-3">
-        <span className="text-sm text-muted">Total</span>
-        <span className="text-2xl font-extrabold tabular-nums">{formatPrice(vm.total)}</span>
-      </div>
-      <p className="-mt-2 text-xs text-muted">Up to {perPerson} tickets per person for this event.</p>
+      {vm.selected ? (
+        <>
+          <div className="flex items-baseline justify-between border-t border-border pt-3">
+            <span className="text-sm text-muted">Total</span>
+            <span className="text-2xl font-extrabold tabular-nums">{formatPrice(vm.total)}</span>
+          </div>
+          <p className="-mt-2 text-xs text-muted">Up to {perPerson} tickets per person for this event.</p>
+        </>
+      ) : null}
 
       {preview ? (
         <p className="rounded-md bg-surface-2 px-4 py-3 text-center text-sm font-semibold text-muted">
@@ -113,7 +138,7 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
         </Button>
       ) : !vm.selected ? (
         <Button size="lg" disabled className="w-full">
-          Sold out
+          {noneAvailableLabel(types.map((type) => typeAvailability(type, vm.now)))}
         </Button>
       ) : (
         <Button size="lg" className="w-full" isLoading={vm.isBooking} onClick={() => void vm.book()}>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   openGraph: { siteName: SITE_NAME, type: "website", locale: "en_GB" },
   twitter: { card: "summary_large_image" },
+  appleWebApp: { title: SITE_NAME, statusBarStyle: "black" },
+};
+
+// Mobile browser bar matches the public site's dark theme.
+export const viewport: Viewport = {
+  themeColor: "#0b1120",
 };
 
 export default function RootLayout({
@@ -30,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jakarta.variable}>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-dvh antialiased">
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

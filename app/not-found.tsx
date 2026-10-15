@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Page not found" };
 // Unknown URLs render outside the public layout, so this page brings its own theme.
 export default function NotFound() {
   return (
-    <main className="theme-public grid min-h-screen place-items-center bg-bg px-4 text-fg">
+    <main className="theme-public grid min-h-dvh place-items-center bg-bg px-4 text-fg">
       <div className="grid justify-items-center gap-4 text-center">
         <p className="text-6xl font-extrabold text-accent">404</p>
         <h1 className="text-2xl font-extrabold">This page doesn&apos;t exist</h1>

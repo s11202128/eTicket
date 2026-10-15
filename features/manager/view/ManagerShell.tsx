@@ -113,7 +113,7 @@ export function ManagerShell({ organizationName, logoUrl, isOrganizer, children 
   );
 
   return (
-    <div className="min-h-screen bg-bg text-fg lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="min-h-dvh bg-bg text-fg lg:grid lg:grid-cols-[256px_1fr]">
       <a
         href="#manager-main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2"
@@ -122,7 +122,7 @@ export function ManagerShell({ organizationName, logoUrl, isOrganizer, children 
       </a>
 
       {/* Dark ink sidebar (desktop) */}
-      <aside className="theme-public sticky top-0 hidden h-screen flex-col gap-6 overflow-y-auto bg-bg p-4 text-fg lg:flex">
+      <aside className="theme-public sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto bg-bg p-4 text-fg lg:flex">
         <Link href={isOrganizer ? "/manager" : "/manager/check-in"} className="px-1 text-lg font-extrabold tracking-tight">
           E<span className="text-accent">·</span>Ticket <span className="text-accent-text">Manager</span>
         </Link>

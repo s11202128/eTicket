@@ -105,7 +105,14 @@ export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions =
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 } },
+        {
+          fps: 10,
+          // Scan area scales with the camera view, so it fits small phones and uses big screens.
+          qrbox: (width, height) => {
+            const side = Math.max(Math.floor(Math.min(width, height) * 0.7), 160);
+            return { width: side, height: side };
+          },
+        },
         (decoded) => {
           const now = Date.now();
           if (decoded === lastScan.current.code && now - lastScan.current.at < REPEAT_SCAN_MS) return;

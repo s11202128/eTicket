@@ -34,9 +34,10 @@ function modeLinks(viewer: NonNullable<HeaderViewer>) {
   return links;
 }
 
+// shortLabel keeps the header on one line on small phones.
 const NAV = [
-  { href: "/events", label: "Events" },
-  { href: "/tickets", label: "My Tickets" },
+  { href: "/events", label: "Events", shortLabel: "Events" },
+  { href: "/tickets", label: "My Tickets", shortLabel: "Tickets" },
 ];
 
 function Avatar({ name, url, size = 36 }: { name: string; url: string | null; size?: number }) {
@@ -111,12 +112,12 @@ export function SiteHeader({ viewer }: { viewer: HeaderViewer }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="text-lg font-extrabold tracking-tight">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4 sm:px-6">
+        <Link href="/" className="shrink-0 py-2 text-lg font-extrabold tracking-tight">
           E<span className="text-accent">·</span>Ticket
         </Link>
 
-        <nav aria-label="Main" className="flex items-center gap-1">
+        <nav aria-label="Main" className="flex min-w-0 items-center sm:gap-1">
           {NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -125,17 +126,18 @@ export function SiteHeader({ viewer }: { viewer: HeaderViewer }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-semibold",
+                  "whitespace-nowrap rounded-md px-2 py-2.5 text-sm font-semibold sm:px-3",
                   active ? "text-fg" : "text-muted hover:text-fg"
                 )}
               >
-                {item.label}
+                <span className="sm:hidden">{item.shortLabel}</span>
+                <span className="hidden sm:inline">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {viewer ? (
             <>
               <NotificationBell />
@@ -143,12 +145,15 @@ export function SiteHeader({ viewer }: { viewer: HeaderViewer }) {
             </>
           ) : (
             <>
-              <ButtonLink href={`/login?next=${encodeURIComponent(pathname)}`} variant="ghost" size="sm">
+              <ButtonLink href={`/login?next=${encodeURIComponent(pathname)}`} variant="ghost" size="sm" className="whitespace-nowrap">
                 Log in
               </ButtonLink>
-              <ButtonLink href="/signup" size="sm" className="hidden sm:inline-flex">
-                Sign up
-              </ButtonLink>
+              {/* Wrapper hides it: a "hidden" class on the button itself loses to its inline-flex. */}
+              <span className="hidden sm:contents">
+                <ButtonLink href="/signup" size="sm" className="whitespace-nowrap">
+                  Sign up
+                </ButtonLink>
+              </span>
             </>
           )}
         </div>

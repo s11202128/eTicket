@@ -35,20 +35,20 @@ export function TicketStub({ ticket, size = "compact", footer }: TicketStubProps
     <article
       className={cn(
         "relative grid overflow-hidden rounded-xl border border-border bg-surface",
-        large ? "md:grid-cols-[1fr_auto]" : "grid-cols-[1fr_auto]"
+        large ? "md:grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"
       )}
     >
       {/* Accent edge */}
       <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1.5", inactive ? "bg-border" : "bg-accent")} />
 
-      <div className={cn("grid content-start gap-2", large ? "p-6 pl-8 sm:p-8 sm:pl-10" : "p-4 pl-6")}>
+      <div className={cn("grid min-w-0 content-start gap-2", large ? "p-6 pl-8 sm:p-8 sm:pl-10" : "p-4 pl-6")}>
         <div className="flex flex-wrap items-center gap-2">
           {ticket.eventCancelled ? <Badge tone="danger">Event cancelled</Badge> : <TicketPhaseBadge phase={ticket.phase} />}
           {ticket.ticketTypeName ? (
             <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold">{ticket.ticketTypeName}</span>
           ) : null}
         </div>
-        <h2 className={cn("font-extrabold leading-tight", large ? "text-3xl" : "text-lg")}>
+        <h2 className={cn("font-extrabold leading-tight break-words", large ? "text-3xl" : "text-lg")}>
           {large || !ticket.event ? (
             title
           ) : (
