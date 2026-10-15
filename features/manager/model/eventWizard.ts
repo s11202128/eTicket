@@ -12,6 +12,9 @@ export const WIZARD_STEPS: { id: WizardStep; label: string }[] = [
   { id: "media", label: "Media & review" },
 ];
 
+// Ticket type names organizers pick from.
+export const TICKET_TYPE_NAMES = ["General Admission", "VIP", "VVIP"] as const;
+
 export type TicketTypeValues = {
   // Database id once saved; null for new rows.
   id: string | null;
