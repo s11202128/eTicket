@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
-import { cn } from "@/lib/cn";
+import { Field, Select } from "@/components/ui/Field";
 import { formatPrice } from "@/lib/format";
 import { typeAvailability, type PublicTicketType, type TypeAvailability } from "@/features/events/model/ticketAvailability";
 import { useTicketSelection } from "@/features/events/viewmodel/useTicketSelection";
@@ -51,39 +51,32 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
 
   return (
     <div className="grid gap-4">
-      <fieldset className="grid gap-2">
-        <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Tickets</legend>
-        {types.map((type) => {
-          const availability = typeAvailability(type, vm.now);
-          const available = availability.state === "on_sale";
-          const checked = vm.selectedId === type.id;
-          return (
-            <label
-              key={type.id}
-              className={cn(
-                "grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-3 rounded-lg border p-3 transition-colors",
-                checked ? "border-accent bg-accent/10" : "border-border hover:border-muted",
-                (!available || blocked) && "cursor-not-allowed opacity-70"
-              )}
-            >
-              <input
-                type="radio"
-                name={`ticket-type-${slug}`}
-                className="mt-1 accent-[var(--accent)]"
-                checked={checked}
-                disabled={!available || blocked}
-                onChange={() => vm.select(type.id)}
-              />
-              <span className="grid gap-1">
-                <span className="font-semibold">{type.name}</span>
-                {type.description ? <span className="text-xs text-muted">{type.description}</span> : null}
-                <AvailabilityNote availability={availability} />
-              </span>
-              <span className="font-bold tabular-nums">{formatPrice(type.price)}</span>
-            </label>
-          );
-        })}
-      </fieldset>
+      <Field label="Ticket type">
+        {(props) => (
+          <Select {...props} value={vm.selectedId ?? ""} onChange={(event) => vm.select(event.target.value)}>
+            {!vm.selected ? <option value="">Select a ticket type</option> : null}
+            {types.map((type) => {
+              const available = typeAvailability(type, vm.now).state === "on_sale";
+              return (
+                <option key={type.id} value={type.id} disabled={!available}>
+                  {`${type.name} · ${formatPrice(type.price)}${available ? "" : " (unavailable)"}`}
+                </option>
+              );
+            })}
+          </Select>
+        )}
+      </Field>
+
+      {vm.selected ? (
+        <div className="grid gap-1 rounded-lg border border-accent bg-accent/10 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <span className="font-semibold">{vm.selected.name}</span>
+            <span className="font-bold tabular-nums">{formatPrice(vm.selected.price)}</span>
+          </div>
+          {vm.selected.description ? <span className="text-xs text-muted">{vm.selected.description}</span> : null}
+          <AvailabilityNote availability={typeAvailability(vm.selected, vm.now)} />
+        </div>
+      ) : null}
 
       {vm.selected && vm.max > 0 && !blocked ? (
         <div className="flex items-center justify-between gap-3">

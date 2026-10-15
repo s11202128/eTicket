@@ -14,7 +14,7 @@ import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
 import { ErrorState, PageHeader } from "@/features/admin/view/AdminUi";
 import { EventStatusBadge } from "@/features/admin/view/StatusBadges";
-import type { WizardValues } from "@/features/manager/model/eventWizard";
+import { TICKET_TYPE_NAMES, type WizardValues } from "@/features/manager/model/eventWizard";
 import { CoverImagePicker } from "@/features/manager/view/CoverImagePicker";
 import { useEventWizard, type EventWizardViewModel } from "@/features/manager/viewmodel/useEventWizard";
 
@@ -316,14 +316,27 @@ function TicketsStep({ vm }: { vm: EventWizardViewModel }) {
               <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr]">
                 <Field label="Name" required error={at("name")}>
                   {(props) => (
-                    <Input
+                    <Select
                       {...props}
-                      maxLength={60}
                       disabled={isLive}
-                      placeholder="General Admission, VIP, Early Bird…"
                       value={type.name}
                       onChange={(event) => vm.updateTicketType(type.key, { name: event.target.value })}
-                    />
+                    >
+                      <option value="">Select a ticket type</option>
+                      {/* Keep a legacy custom name selectable on events saved before the dropdown. */}
+                      {type.name && !(TICKET_TYPE_NAMES as readonly string[]).includes(type.name) ? (
+                        <option value={type.name}>{type.name}</option>
+                      ) : null}
+                      {TICKET_TYPE_NAMES.map((name) => (
+                        <option
+                          key={name}
+                          value={name}
+                          disabled={name !== type.name && values.ticketTypes.some((other) => other.name === name)}
+                        >
+                          {name}
+                        </option>
+                      ))}
+                    </Select>
                   )}
                 </Field>
                 <Field label={`Price (${siteConfig.currency.symbol})`} required error={at("price")}>
@@ -377,7 +390,7 @@ function TicketsStep({ vm }: { vm: EventWizardViewModel }) {
         })}
       </ul>
 
-      {!isLive ? (
+      {!isLive && values.ticketTypes.length < TICKET_TYPE_NAMES.length ? (
         <Button type="button" variant="secondary" className="justify-self-start" onClick={vm.addTicketType}>
           + Add ticket type
         </Button>
