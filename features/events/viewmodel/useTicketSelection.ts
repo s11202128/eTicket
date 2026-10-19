@@ -1,25 +1,55 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
-import { bookTicketType } from "@/features/tickets/model/tickets.repository";
+import { bookTicketType, countMyTicketsForEvent } from "@/features/tickets/model/tickets.repository";
+import { useViewer } from "@/features/auth/viewmodel/useViewer";
 import { defaultTypeId, maxQuantity, type PublicTicketType } from "@/features/events/model/ticketAvailability";
 
 type Options = {
   types: PublicTicketType[];
   perPerson: number;
+  eventId: string;
   slug: string;
-  isSignedIn: boolean;
-  // Tickets the viewer already holds for this event.
-  alreadyBooked: number;
+  // Organizer/admin preview: no viewer lookups.
+  preview: boolean;
 };
 
 // Choose a ticket type and quantity, then book. Signed-out visitors go to
-// login and come back to this event.
-export function useTicketSelection({ types, perPerson, slug, isSignedIn, alreadyBooked }: Options) {
+// login and come back to this event. The page is cached for everyone, so who
+// is signed in and how many tickets they hold are looked up in the browser.
+export function useTicketSelection({ types, perPerson, eventId, slug, preview }: Options) {
   const router = useRouter();
   const toast = useToast();
+  const viewerState = useViewer();
+  const viewerId = !preview && viewerState.status === "signed_in" ? viewerState.viewer.id : null;
+  const isSignedIn = viewerId !== null;
+  // Known once the viewer (and, when signed in, their ticket count) has loaded.
+  const [booked, setBooked] = useState<{ userId: string; count: number } | null>(null);
+  const alreadyBooked = booked && booked.userId === viewerId ? booked.count : 0;
+  const viewerReady =
+    preview || viewerState.status === "signed_out" || (viewerId !== null && booked?.userId === viewerId);
+
+  // Bumped after a booking to count again.
+  const [countVersion, setCountVersion] = useState(0);
+
+  useEffect(() => {
+    if (!viewerId) return;
+    let active = true;
+    countMyTicketsForEvent(eventId, viewerId).then(
+      (count) => {
+        if (active) setBooked({ userId: viewerId, count });
+      },
+      () => {
+        // Unknown: let them try; book_ticket enforces the limit and says so.
+        if (active) setBooked({ userId: viewerId, count: 0 });
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [eventId, viewerId, countVersion]);
   // One clock per render pass is plenty for sales windows.
   const now = useMemo(() => new Date(), []);
   // book_ticket counts tickets already held toward the per-person limit.
@@ -70,7 +100,8 @@ export function useTicketSelection({ types, perPerson, slug, isSignedIn, already
         safeQuantity === 1 ? { label: "View ticket", href: `/tickets/${result.code}` } : { label: "My tickets", href: "/tickets" }
       );
       setQuantity(1);
-      // Re-render the server page so seats left update.
+      setCountVersion((value) => value + 1);
+      // Re-render the page so seats left update (cached pages catch up within a minute).
       router.refresh();
     } catch {
       toast.error("Booking failed. Check your connection and try again.");
@@ -90,6 +121,9 @@ export function useTicketSelection({ types, perPerson, slug, isSignedIn, already
     decrement: () => setQuantity(Math.max(safeQuantity - 1, 1)),
     total: selected ? selected.price * safeQuantity : 0,
     remaining,
+    isSignedIn,
+    alreadyBooked,
+    viewerReady,
     isBooking,
     book,
   };

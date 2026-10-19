@@ -4,6 +4,7 @@ import { slugify, toDateTimeLocalValue } from "@/lib/format";
 import { eventImageSrc, uploadImage, type UploadResult } from "@/lib/storage";
 import type { TicketTypeValues, WizardValues } from "@/features/manager/model/eventWizard";
 import { validateStep } from "@/features/manager/model/eventWizard";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 // Everything here runs as the signed-in organizer; row-level security and
 // the event functions decide what's allowed.
@@ -342,6 +343,7 @@ export async function updateLiveEvent(eventId: string, original: WizardValues, e
   const { data, error } = await supabase.rpc("update_published_event", { p_event_id: eventId, p_changes: changes });
   if (error) return { ok: false, errorMessage: friendlyError(error.message) };
   const result = data as { requires_review?: boolean } | null;
+  refreshPublicPages();
   return { ok: true, requiresReview: Boolean(result?.requires_review) };
 }
 

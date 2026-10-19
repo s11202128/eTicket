@@ -6,6 +6,11 @@ import { OrganizerPageScreen } from "@/features/events/view/OrganizerPageScreen"
 
 type Params = Promise<{ id: string }>;
 
+// Built on first visit, then cached like the rest of the public site.
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
   const organizer = await getPublicOrganizer(id);

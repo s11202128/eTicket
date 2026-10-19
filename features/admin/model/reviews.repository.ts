@@ -3,6 +3,7 @@ import type { EventRegion, EventStatus, Json, OrganizerStatus } from "@/lib/data
 import { eventImageSrc, publicImageUrl } from "@/lib/storage";
 import { ilikePattern, pageRange, sanitizeSearch } from "@/lib/search";
 import type { ActionResult, Paged } from "@/features/admin/model/admin.types";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 // Admin queues: organizer applications, event reviews, cancellation
 // requests and the audit log. Admin-only reads are enforced by RLS; every
@@ -98,6 +99,7 @@ export async function reviewOrganizer(userId: string, decision: OrganizerDecisio
     p_note: note.trim() || undefined,
   });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return ok;
 }
 
@@ -323,6 +325,7 @@ export async function reviewEvent(eventId: string, decision: EventDecision, note
     p_note: note.trim() || undefined,
   });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return ok;
 }
 

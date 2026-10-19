@@ -1,5 +1,7 @@
 import { cache } from "react";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { PUBLIC_CACHE_TAG, PUBLIC_REVALIDATE_SECONDS } from "@/lib/publicCache";
 import type { EventRegion, EventStatus } from "@/lib/database.types";
 import { regionsForFilter } from "@/lib/regions";
 import { ilikePattern, sanitizeSearch } from "@/lib/search";
@@ -16,12 +18,14 @@ import type {
 } from "@/features/events/model/events.types";
 import type { PublicTicketType } from "@/features/events/model/ticketAvailability";
 
-// Server-side reads for public pages. Row-level security limits every query
-// to published events (plus events the viewer holds tickets for).
+// Server-side reads for public pages. They run as the anonymous visitor (no
+// cookies), so row-level security limits them to published and completed
+// events and the results are the same for everyone. That is what lets the
+// public pages be cached; see PUBLIC_REVALIDATE_SECONDS.
 
 export const EVENTS_PAGE_SIZE = 12;
 
-type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+type Supabase = ReturnType<typeof createSupabasePublicClient>;
 type EventRow = EventRecord & { categories: { name: string; slug: string } | null };
 
 const EVENT_SELECT = "*, categories(name, slug)";
@@ -77,15 +81,15 @@ async function withCounts(supabase: Supabase, rows: EventRow[]): Promise<PublicE
   return rows.map((row) => toPublicEvent(row, counts.get(row.id) ?? 0, now));
 }
 
-export async function listCategories(): Promise<PublicCategory[]> {
-  const supabase = await createSupabaseServerClient();
+async function fetchCategories(): Promise<PublicCategory[]> {
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase.from("categories").select("id, name, slug").order("sort_order").order("name");
   if (error) throw new Error(error.message);
   return data;
 }
 
 export async function getSiteChrome(): Promise<{ announcement: AnnouncementView }> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data } = await supabase.from("site_content").select("value").eq("key", "announcement").maybeSingle();
   return { announcement: parseAnnouncement(data?.value) };
 }
@@ -96,7 +100,7 @@ export async function getHomeData(): Promise<{
   upcoming: PublicEvent[];
   categories: PublicCategory[];
 }> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const nowIso = new Date().toISOString();
 
   const [heroResult, featuredResult, upcomingResult, categories] = await Promise.all([
@@ -116,7 +120,7 @@ export async function getHomeData(): Promise<{
       .gt("starts_at", nowIso)
       .order("starts_at")
       .limit(8),
-    listCategories(),
+    fetchCategories(),
   ]);
 
   if (featuredResult.error) throw new Error(featuredResult.error.message);
@@ -141,8 +145,8 @@ export async function getHomeData(): Promise<{
   };
 }
 
-export async function listPublicEvents(filters: EventListFilters): Promise<{ events: PublicEvent[]; total: number }> {
-  const supabase = await createSupabaseServerClient();
+async function fetchPublicEvents(filters: EventListFilters): Promise<{ events: PublicEvent[]; total: number }> {
+  const supabase = createSupabasePublicClient();
   const from = (filters.page - 1) * EVENTS_PAGE_SIZE;
 
   // !inner on categories only when filtering by category.
@@ -170,12 +174,24 @@ export async function listPublicEvents(filters: EventListFilters): Promise<{ eve
   return { events: await withCounts(supabase, data as unknown as EventRow[]), total: count ?? 0 };
 }
 
+// /events reads the URL filters, so that page renders per request; its data
+// is cached per filter combination instead (the filters are the cache key).
+export const listPublicEvents = unstable_cache(fetchPublicEvents, ["public-events"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: [PUBLIC_CACHE_TAG],
+});
+
+export const listCategories = unstable_cache(fetchCategories, ["public-categories"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: [PUBLIC_CACHE_TAG],
+});
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // By slug; old links used the event id, so ids resolve too. cache() shares
 // one lookup per request between metadata, the page and the OG image.
 export const getPublicEvent = cache(async (slugOrId: string): Promise<PublicEvent | null> => {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const column = UUID.test(slugOrId) ? "id" : "slug";
   const { data, error } = await supabase.from("events").select(EVENT_SELECT).eq(column, slugOrId).maybeSingle();
   if (error) throw new Error(error.message);
@@ -186,7 +202,7 @@ export const getPublicEvent = cache(async (slugOrId: string): Promise<PublicEven
 
 // Ticket types in display order with tickets sold, for the booking panel.
 export const getPublicTicketTypes = cache(async (eventId: string): Promise<PublicTicketType[]> => {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const [{ data, error }, { data: counts, error: countError }] = await Promise.all([
     supabase
       .from("ticket_types")
@@ -211,24 +227,10 @@ export const getPublicTicketTypes = cache(async (eventId: string): Promise<Publi
   }));
 });
 
-// Tickets the viewer already holds for this event (active or used), which
-// count toward the per-person limit in book_ticket.
-export async function getMyTicketCount(eventId: string, userId: string): Promise<number> {
-  const supabase = await createSupabaseServerClient();
-  const { count, error } = await supabase
-    .from("tickets")
-    .select("id", { count: "exact", head: true })
-    .eq("event_id", eventId)
-    .eq("user_id", userId)
-    .in("status", ["active", "used"]);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
 // Approved (or suspended, so existing events keep their host) organizers only.
 export const getPublicOrganizer = cache(async (organizerId: string): Promise<PublicOrganizer | null> => {
   if (!UUID.test(organizerId)) return null;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase.rpc("get_public_organizers", { p_user_ids: [organizerId] });
   if (error) throw new Error(error.message);
   const row = data[0];
@@ -245,7 +247,7 @@ export const getPublicOrganizer = cache(async (organizerId: string): Promise<Pub
 
 // An organizer's published events that haven't started yet, soonest first.
 export async function listOrganizerEvents(organizerId: string): Promise<PublicEvent[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("events")
     .select(EVENT_SELECT)

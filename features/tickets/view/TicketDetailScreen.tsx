@@ -75,9 +75,12 @@ export default function TicketDetailScreen({ code, holderName }: { code: string;
                     Add to calendar
                   </Button>
                 ) : null}
-                <ButtonLink href={`/events/${ticket.event.slug}`} variant="ghost">
-                  View event
-                </ButtonLink>
+                {/* Cancelled events are no longer on the public site. */}
+                {ticket.eventCancelled ? null : (
+                  <ButtonLink href={`/events/${ticket.event.slug}`} variant="ghost">
+                    View event
+                  </ButtonLink>
+                )}
               </>
             ) : null}
             {ticket.canCancel ? (

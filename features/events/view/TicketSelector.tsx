@@ -12,10 +12,8 @@ import { useTicketSelection } from "@/features/events/viewmodel/useTicketSelecti
 type Props = {
   types: PublicTicketType[];
   perPerson: number;
+  eventId: string;
   slug: string;
-  isSignedIn: boolean;
-  // Tickets the viewer already holds for this event.
-  alreadyBooked?: number;
   // Event-level reason booking isn't possible (ended, cancelled, …).
   unavailableReason: string | null;
   // Organizer/admin preview: everything visible, booking disabled.
@@ -64,13 +62,13 @@ function noneAvailableLabel(availabilities: TypeAvailability[]): string {
 export function TicketSelector({
   types,
   perPerson,
+  eventId,
   slug,
-  isSignedIn,
-  alreadyBooked = 0,
   unavailableReason,
   preview = false,
 }: Props) {
-  const vm = useTicketSelection({ types, perPerson, slug, isSignedIn, alreadyBooked });
+  const vm = useTicketSelection({ types, perPerson, eventId, slug, preview });
+  const { isSignedIn, alreadyBooked } = vm;
   const limitReached = isSignedIn && vm.remaining === 0;
   const blocked = preview || Boolean(unavailableReason) || limitReached;
 
@@ -168,8 +166,13 @@ export function TicketSelector({
           {noneAvailableLabel(types.map((type) => typeAvailability(type, vm.now)))}
         </Button>
       ) : (
-        <Button size="lg" className="w-full" isLoading={vm.isBooking} onClick={() => void vm.book()}>
-          {isSignedIn ? (vm.quantity === 1 ? "Book ticket" : `Book ${vm.quantity} tickets`) : "Log in to book"}
+        // Waits for the sign-in check so "Log in to book" doesn't flash for signed-in visitors.
+        <Button size="lg" className="w-full" isLoading={vm.isBooking || !vm.viewerReady} onClick={() => void vm.book()}>
+          {isSignedIn || !vm.viewerReady
+            ? vm.quantity === 1
+              ? "Book ticket"
+              : `Book ${vm.quantity} tickets`
+            : "Log in to book"}
         </Button>
       )}
     </div>

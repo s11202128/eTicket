@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getViewer } from "@/lib/supabase/server";
 import { excerpt, formatInSiteZone, siteUrl } from "@/lib/site";
 import { siteConfig } from "@/lib/siteConfig";
-import { getMyTicketCount, getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
+import { getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
 
 type Params = Promise<{ slug: string }>;
+
+// Each event page is built on its first visit, then cached and refreshed like
+// the rest of the public site (see app/(public)/layout.tsx). The empty list is
+// what turns that on for this dynamic route.
+export async function generateStaticParams() {
+  return [];
+}
 
 function summary(event: PublicEvent): string {
   const when = formatInSiteZone(event.startsAt, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
@@ -61,17 +67,16 @@ function eventJsonLd(event: PublicEvent): string {
 
 export default async function EventDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const [event, viewer] = await Promise.all([getPublicEvent(slug), getViewer()]);
+  const event = await getPublicEvent(slug);
 
   if (!event) notFound();
 
   // Old links used the event id; send them to the slug URL.
   if (event.slug !== slug) permanentRedirect(`/events/${event.slug}`);
 
-  const [ticketTypes, host, alreadyBooked] = await Promise.all([
+  const [ticketTypes, host] = await Promise.all([
     getPublicTicketTypes(event.id),
     event.organizerId ? getPublicOrganizer(event.organizerId) : Promise.resolve(null),
-    viewer ? getMyTicketCount(event.id, viewer.id) : Promise.resolve(0),
   ]);
 
   return (
@@ -81,8 +86,6 @@ export default async function EventDetailPage({ params }: { params: Params }) {
         event={event}
         ticketTypes={ticketTypes}
         host={host}
-        isSignedIn={Boolean(viewer)}
-        alreadyBooked={alreadyBooked}
       />
     </>
   );

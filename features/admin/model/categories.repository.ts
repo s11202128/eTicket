@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { ActionResult, Category } from "@/features/admin/model/admin.types";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -31,6 +32,7 @@ export async function createCategory(input: CategoryInput): Promise<ActionResult
     .from("categories")
     .insert({ name: input.name, slug: input.slug, sort_order: input.sortOrder });
   if (error) return { ok: false, errorMessage: friendly(error.code, error.message) };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }
 
@@ -40,6 +42,7 @@ export async function updateCategory(id: string, input: CategoryInput): Promise<
     .update({ name: input.name, slug: input.slug, sort_order: input.sortOrder })
     .eq("id", id);
   if (error) return { ok: false, errorMessage: friendly(error.code, error.message) };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }
 
@@ -47,5 +50,6 @@ export async function updateCategory(id: string, input: CategoryInput): Promise<
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }

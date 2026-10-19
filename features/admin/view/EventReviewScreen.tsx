@@ -99,7 +99,6 @@ export default function EventReviewScreen({ eventId }: { eventId: string }) {
                       }
                     : null
                 }
-                isSignedIn
                 preview
               />
             </div>

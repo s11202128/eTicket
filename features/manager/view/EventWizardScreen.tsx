@@ -483,7 +483,6 @@ function MediaStep({ vm }: { vm: EventWizardViewModel }) {
               salesEnd: type.salesEnd ? new Date(type.salesEnd).toISOString() : null,
             }))}
             host={vm.host}
-            isSignedIn
             preview
           />
         </div>

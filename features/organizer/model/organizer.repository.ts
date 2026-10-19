@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type { OrganizerStatus, Tables } from "@/lib/database.types";
 import { publicImageUrl, uploadImage, type UploadResult } from "@/lib/storage";
 import type { OrganizerApplicationInput, OrganizerFormValues } from "@/features/organizer/model/organizer.schema";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 export type OrganizerApplication = {
   userId: string;
@@ -99,5 +100,6 @@ export async function updateOrganizerProfile(input: OrganizerApplicationInput, l
     p_logo_path: logoPath ?? undefined,
   });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return { ok: true };
 }
