@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getViewer } from "@/lib/supabase/server";
 import { excerpt, formatInSiteZone, siteUrl } from "@/lib/site";
 import { siteConfig } from "@/lib/siteConfig";
-import { getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
+import { getMyTicketCount, getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
 
@@ -68,9 +68,10 @@ export default async function EventDetailPage({ params }: { params: Params }) {
   // Old links used the event id; send them to the slug URL.
   if (event.slug !== slug) permanentRedirect(`/events/${event.slug}`);
 
-  const [ticketTypes, host] = await Promise.all([
+  const [ticketTypes, host, alreadyBooked] = await Promise.all([
     getPublicTicketTypes(event.id),
     event.organizerId ? getPublicOrganizer(event.organizerId) : Promise.resolve(null),
+    viewer ? getMyTicketCount(event.id, viewer.id) : Promise.resolve(0),
   ]);
 
   return (
@@ -81,6 +82,7 @@ export default async function EventDetailPage({ params }: { params: Params }) {
         ticketTypes={ticketTypes}
         host={host}
         isSignedIn={Boolean(viewer)}
+        alreadyBooked={alreadyBooked}
       />
     </>
   );

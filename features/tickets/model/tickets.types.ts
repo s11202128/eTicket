@@ -14,6 +14,8 @@ export type CheckInOutcome = TicketResult & {
   holderName?: string | null;
   checkedInAt?: string | null;
   ticketTypeName?: string | null;
+  // Event start, used to explain a "wrong date" answer.
+  startsAt?: string | null;
 };
 
 // "upcoming": active and the event hasn't finished; "past": active but over.

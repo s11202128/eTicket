@@ -46,6 +46,7 @@ function toRow(event: EventWithCategory, sold: number): AdminEventRow {
 function friendlyError(code: string | undefined, message: string): string {
   if (code === UNIQUE_VIOLATION) return "That slug is already used by another event. Choose a different one.";
   if (code === FOREIGN_KEY_VIOLATION) return "This event has tickets, so it can't be deleted. Cancel it instead.";
+  if (/events_end_after_start/.test(message)) return "The end must be after the start.";
   return message;
 }
 

@@ -11,21 +11,25 @@ type Options = {
   perPerson: number;
   slug: string;
   isSignedIn: boolean;
+  // Tickets the viewer already holds for this event.
+  alreadyBooked: number;
 };
 
 // Choose a ticket type and quantity, then book. Signed-out visitors go to
 // login and come back to this event.
-export function useTicketSelection({ types, perPerson, slug, isSignedIn }: Options) {
+export function useTicketSelection({ types, perPerson, slug, isSignedIn, alreadyBooked }: Options) {
   const router = useRouter();
   const toast = useToast();
   // One clock per render pass is plenty for sales windows.
   const now = useMemo(() => new Date(), []);
+  // book_ticket counts tickets already held toward the per-person limit.
+  const remaining = Math.max(perPerson - alreadyBooked, 0);
   const [selectedId, setSelectedId] = useState<string | null>(() => defaultTypeId(types, now));
   const [quantity, setQuantity] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
 
   const selected = types.find((type) => type.id === selectedId) ?? null;
-  const max = selected ? maxQuantity(selected, perPerson, now) : 0;
+  const max = selected ? maxQuantity(selected, remaining, now) : 0;
   const safeQuantity = Math.min(Math.max(quantity, 1), Math.max(max, 1));
 
   const select = (id: string) => {
@@ -40,7 +44,19 @@ export function useTicketSelection({ types, perPerson, slug, isSignedIn }: Optio
       router.push(`/login?next=${encodeURIComponent(`/events/${slug}`)}`);
       return;
     }
-    if (!selected || max === 0 || isBooking) return;
+    if (isBooking) return;
+    if (!selected) {
+      toast.error("Choose a ticket type first.");
+      return;
+    }
+    if (remaining === 0) {
+      toast.error(`You already have ${alreadyBooked} ticket(s) for this event, the most allowed per person.`);
+      return;
+    }
+    if (max === 0) {
+      toast.error(`${selected.name} isn't available right now.`);
+      return;
+    }
 
     setIsBooking(true);
     try {
@@ -73,6 +89,7 @@ export function useTicketSelection({ types, perPerson, slug, isSignedIn }: Optio
     increment: () => setQuantity(Math.min(safeQuantity + 1, max)),
     decrement: () => setQuantity(Math.max(safeQuantity - 1, 1)),
     total: selected ? selected.price * safeQuantity : 0,
+    remaining,
     isBooking,
     book,
   };

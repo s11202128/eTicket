@@ -14,6 +14,8 @@ import { TicketSelector } from "@/features/events/view/TicketSelector";
 type EventDetailScreenProps = {
   event: PublicEvent;
   isSignedIn: boolean;
+  // Tickets the viewer already holds for this event (counts toward the limit).
+  alreadyBooked?: number;
   ticketTypes: PublicTicketType[];
   // The organizer hosting the event (null for platform events).
   host: PublicOrganizer | null;
@@ -30,7 +32,14 @@ function unavailableReason(event: PublicEvent): string | null {
   return null;
 }
 
-export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, preview = false }: EventDetailScreenProps) {
+export function EventDetailScreen({
+  event,
+  isSignedIn,
+  alreadyBooked = 0,
+  ticketTypes,
+  host,
+  preview = false,
+}: EventDetailScreenProps) {
   const seats =
     event.capacity === null
       ? "Plenty of seats"
@@ -40,7 +49,8 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
 
   // Phones: a bar pinned to the bottom jumps to the booking panel below the description.
   const onSale = ticketTypes.filter((type) => typeAvailability(type, new Date()).state === "on_sale");
-  const showBookBar = !preview && !unavailableReason(event) && onSale.length > 0;
+  const limitReached = isSignedIn && alreadyBooked >= event.maxTicketsPerUser;
+  const showBookBar = !preview && !unavailableReason(event) && onSale.length > 0 && !limitReached;
 
   return (
     <article>
@@ -145,6 +155,7 @@ export function EventDetailScreen({ event, isSignedIn, ticketTypes, host, previe
               perPerson={event.maxTicketsPerUser}
               slug={event.slug}
               isSignedIn={isSignedIn}
+              alreadyBooked={alreadyBooked}
               unavailableReason={unavailableReason(event)}
               preview={preview}
             />

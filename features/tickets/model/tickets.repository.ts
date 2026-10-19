@@ -104,10 +104,10 @@ export async function checkInTicket(code: string, eventId?: string): Promise<Che
     p_code: code,
     ...(eventId ? { p_event_id: eventId } : {}),
   });
-  if (error) return { ok: false, errorMessage: error.message };
+  if (error) return { ok: false, errorMessage: checkInErrorMessage(error.message) };
 
   const [row] = data;
-  if (!row) return { ok: false, errorMessage: "Check-in failed. Please try again." };
+  if (!row) return { ok: false, errorMessage: "Check-in failed: the server sent no answer. Please try again." };
 
   return {
     ok: true,
@@ -117,7 +117,14 @@ export async function checkInTicket(code: string, eventId?: string): Promise<Che
     holderName: row.holder_name,
     checkedInAt: row.checked_in_at,
     ticketTypeName: row.ticket_type_name,
+    startsAt: row.starts_at,
   };
+}
+
+function checkInErrorMessage(message: string): string {
+  if (/JWT|not authenticated|session/i.test(message)) return "Your session has expired. Sign in again to keep scanning.";
+  if (/Failed to fetch|NetworkError|network/i.test(message)) return "Check-in failed. Check your connection and try again.";
+  return message;
 }
 
 // Always filtered by user: admins can read every ticket.

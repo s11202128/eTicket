@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
@@ -13,6 +14,8 @@ type Props = {
   perPerson: number;
   slug: string;
   isSignedIn: boolean;
+  // Tickets the viewer already holds for this event.
+  alreadyBooked?: number;
   // Event-level reason booking isn't possible (ended, cancelled, …).
   unavailableReason: string | null;
   // Organizer/admin preview: everything visible, booking disabled.
@@ -58,9 +61,18 @@ function noneAvailableLabel(availabilities: TypeAvailability[]): string {
 }
 
 // Booking panel: choose a ticket type and quantity, see the total, book.
-export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailableReason, preview = false }: Props) {
-  const vm = useTicketSelection({ types, perPerson, slug, isSignedIn });
-  const blocked = preview || Boolean(unavailableReason);
+export function TicketSelector({
+  types,
+  perPerson,
+  slug,
+  isSignedIn,
+  alreadyBooked = 0,
+  unavailableReason,
+  preview = false,
+}: Props) {
+  const vm = useTicketSelection({ types, perPerson, slug, isSignedIn, alreadyBooked });
+  const limitReached = isSignedIn && vm.remaining === 0;
+  const blocked = preview || Boolean(unavailableReason) || limitReached;
 
   if (types.length === 0) {
     return (
@@ -124,7 +136,10 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
             <span className="text-sm text-muted">Total</span>
             <span className="text-2xl font-extrabold tabular-nums">{formatPrice(vm.total)}</span>
           </div>
-          <p className="-mt-2 text-xs text-muted">Up to {perPerson} tickets per person for this event.</p>
+          <p className="-mt-2 text-xs text-muted">
+            Up to {perPerson} tickets per person for this event.
+            {isSignedIn && alreadyBooked > 0 ? ` You have ${alreadyBooked}.` : ""}
+          </p>
         </>
       ) : null}
 
@@ -136,6 +151,18 @@ export function TicketSelector({ types, perPerson, slug, isSignedIn, unavailable
         <Button size="lg" disabled className="w-full">
           {unavailableReason}
         </Button>
+      ) : limitReached ? (
+        <div className="grid gap-2">
+          <Button size="lg" disabled className="w-full">
+            Ticket limit reached
+          </Button>
+          <p role="status" className="text-center text-sm text-muted">
+            You already have {alreadyBooked} ticket{alreadyBooked === 1 ? "" : "s"} for this event.{" "}
+            <Link href="/tickets" className="font-semibold text-accent-text hover:underline">
+              View my tickets
+            </Link>
+          </p>
+        </div>
       ) : !vm.selected ? (
         <Button size="lg" disabled className="w-full">
           {noneAvailableLabel(types.map((type) => typeAvailability(type, vm.now)))}
