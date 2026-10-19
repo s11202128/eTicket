@@ -92,6 +92,19 @@ export async function bookTicketType(ticketTypeId: string, quantity = 1): Promis
   return { ok: true, code: data[0]?.code };
 }
 
+// Tickets the user holds for one event (active or used); book_ticket counts
+// these toward the per-person limit.
+export async function countMyTicketsForEvent(eventId: string, userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("tickets")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .eq("user_id", userId)
+    .in("status", ["active", "used"]);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function cancelTicket(ticketId: string): Promise<TicketResult> {
   const { error } = await supabase.rpc("cancel_my_ticket", { p_ticket_id: ticketId });
   if (error) return { ok: false, errorMessage: error.message };

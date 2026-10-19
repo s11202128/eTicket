@@ -10,6 +10,7 @@ import type {
   Paged,
 } from "@/features/admin/model/admin.types";
 import type { EventFormOutput } from "@/features/admin/model/eventForm.schema";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 type EventWithCategory = Tables<"events"> & { categories: { name: string } | null };
 
@@ -142,6 +143,7 @@ async function syncSingleTicketType(
 export async function createAdminEvent(values: EventFormOutput): Promise<ActionResult<{ id: string }>> {
   const { data, error } = await supabase.from("events").insert(toDbFields(values)).select("id").single();
   if (error) return { ok: false, errorMessage: friendlyError(error.code, error.message) };
+  refreshPublicPages();
 
   const tickets = await syncSingleTicketType(data.id, values.price, values.capacity);
   if (!tickets.ok) return { ok: false, errorMessage: `Event saved, but tickets failed: ${tickets.errorMessage}` };
@@ -165,6 +167,7 @@ export async function updateAdminEvent(
   if (data.length === 0) return { ok: false, errorMessage: "Event not found or you don't have permission." };
 
   const tickets = await syncSingleTicketType(eventId, values.price, values.capacity);
+  refreshPublicPages();
   if (!tickets.ok) return { ok: false, errorMessage: tickets.errorMessage };
   return { ok: true, data: { ticketTypesSkipped: tickets.data.skipped } };
 }
@@ -219,6 +222,7 @@ export async function cancelAdminEvent(eventId: string, reason: string): Promise
     p_note: reason.trim() || undefined,
   });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return { ok: true, data };
 }
 
@@ -226,6 +230,7 @@ export async function deleteAdminEvent(eventId: string): Promise<ActionResult> {
   const { data, error } = await supabase.from("events").delete().eq("id", eventId).select("id");
   if (error) return { ok: false, errorMessage: friendlyError(error.code, error.message) };
   if (data.length === 0) return { ok: false, errorMessage: "Event not found or you don't have permission." };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }
 

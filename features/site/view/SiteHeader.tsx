@@ -9,17 +9,18 @@ import { cn } from "@/lib/cn";
 import { useDismiss } from "@/lib/useDismiss";
 import { ButtonLink } from "@/components/ui/Button";
 import { NotificationBell } from "@/features/notifications/view/NotificationBell";
+import { useViewer } from "@/features/auth/viewmodel/useViewer";
 
-export type HeaderViewer = {
+type HeaderViewer = {
   name: string;
   avatarUrl: string | null;
   role: UserRole;
   organizerStatus: OrganizerStatus | null;
   isStaff: boolean;
-} | null;
+};
 
 // "Mode" links: switch between booking, hosting and admin.
-function modeLinks(viewer: NonNullable<HeaderViewer>) {
+function modeLinks(viewer: HeaderViewer) {
   const links: { href: string; label: string }[] = [];
   if (viewer.organizerStatus === "approved") {
     links.push({ href: "/manager", label: "Event Manager dashboard" });
@@ -57,7 +58,7 @@ function Avatar({ name, url, size = 36 }: { name: string; url: string | null; si
   );
 }
 
-function AccountMenu({ viewer }: { viewer: NonNullable<HeaderViewer> }) {
+function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -107,8 +108,11 @@ function AccountMenu({ viewer }: { viewer: NonNullable<HeaderViewer> }) {
   );
 }
 
-export function SiteHeader({ viewer }: { viewer: HeaderViewer }) {
+// The signed-in part loads in the browser: public pages are cached and shared
+// between visitors, so the server doesn't know who is looking.
+export function SiteHeader() {
   const pathname = usePathname();
+  const viewerState = useViewer();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur">
@@ -138,10 +142,13 @@ export function SiteHeader({ viewer }: { viewer: HeaderViewer }) {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          {viewer ? (
+          {viewerState.status === "loading" ? (
+            // Same size as the avatar, so nothing shifts once it's known.
+            <span aria-hidden className="size-9 animate-pulse rounded-full bg-surface-2" />
+          ) : viewerState.status === "signed_in" ? (
             <>
               <NotificationBell />
-              <AccountMenu viewer={viewer} />
+              <AccountMenu viewer={viewerState.viewer} />
             </>
           ) : (
             <>

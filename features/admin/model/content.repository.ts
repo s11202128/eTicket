@@ -7,6 +7,7 @@ import type {
   EventOption,
   HeroContent,
 } from "@/features/admin/model/admin.types";
+import { refreshPublicPages } from "@/lib/refreshPublicPages";
 
 export { DEFAULT_ANNOUNCEMENT, DEFAULT_HERO } from "@/lib/siteContent";
 
@@ -23,6 +24,7 @@ export async function getSiteContent(): Promise<{ hero: HeroContent; announcemen
 async function saveContent(key: string, value: Json): Promise<ActionResult> {
   const { error } = await supabase.from("site_content").upsert({ key, value });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }
 
@@ -66,5 +68,6 @@ export async function getFeaturedEditorData(): Promise<{ featured: EventOption[]
 export async function saveFeaturedOrder(eventIds: string[]): Promise<ActionResult> {
   const { error } = await supabase.rpc("admin_set_featured_events", { p_event_ids: eventIds });
   if (error) return { ok: false, errorMessage: error.message };
+  refreshPublicPages();
   return { ok: true, data: undefined };
 }

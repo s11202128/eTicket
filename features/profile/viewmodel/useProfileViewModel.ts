@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { publicImageUrl, uploadImage, validateImage } from "@/lib/storage";
 import { getMyProfile, updateMyProfile } from "@/features/profile/model/profile.repository";
+import { reloadViewer } from "@/features/auth/model/viewer.store";
 
 export function useProfileViewModel() {
   const router = useRouter();
@@ -79,7 +80,8 @@ export function useProfileViewModel() {
       return;
     }
     toast.success("Profile saved.");
-    // Refresh server-rendered parts such as the header avatar.
+    // The header loads the viewer in the browser; pick up the new name and photo.
+    reloadViewer();
     router.refresh();
   };
 
