@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Html5Qrcode } from "html5-qrcode";
 import { checkInTicket } from "@/features/tickets/model/tickets.repository";
+import { parseTicketCode } from "@/lib/qr";
 import type { CheckInResult } from "@/lib/database.types";
 
 export const SCANNER_ELEMENT_ID = "checkin-scanner";
@@ -14,6 +15,7 @@ export type CheckInDisplay = {
   eventTitle: string | null;
   checkedInAt: string | null;
   ticketTypeName: string | null;
+  startsAt: string | null;
 };
 
 type ScannerOptions = {
@@ -46,8 +48,12 @@ export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions =
   });
 
   const submit = useCallback(async (rawCode: string) => {
-    const trimmed = rawCode.trim();
-    if (!trimmed || busyRef.current) return;
+    const trimmed = parseTicketCode(rawCode);
+    if (busyRef.current) return;
+    if (!trimmed) {
+      setError("Enter a ticket code, or scan the QR code on the ticket.");
+      return;
+    }
 
     busyRef.current = true;
     setIsChecking(true);
@@ -67,6 +73,7 @@ export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions =
         eventTitle: outcome.eventTitle ?? null,
         checkedInAt: outcome.checkedInAt ?? null,
         ticketTypeName: outcome.ticketTypeName ?? null,
+        startsAt: outcome.startsAt ?? null,
       };
       setDisplay(next);
       setCode("");
@@ -97,11 +104,23 @@ export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions =
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
+    // Browsers only allow the camera on HTTPS (or localhost).
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setCameraState("error");
+      setCameraError("This browser can't use the camera here (it needs HTTPS). Type the code below instead.");
+      return;
+    }
     setCameraState("starting");
     try {
       // Loaded only when the camera is used, to keep the page light.
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, { verbose: false });
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
+      // QR only: skipping 1D barcode formats makes decoding faster and avoids misreads.
+      // The browser's built-in detector is used where available (faster on phones).
+      const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, {
+        verbose: false,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      });
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
@@ -131,7 +150,11 @@ export function useCheckInScanner({ eventId = null, onResult }: ScannerOptions =
       setCameraError(
         /permission|denied|notallowed/i.test(message)
           ? "Camera access was blocked. Allow camera access in your browser settings, or type the code below."
-          : "Couldn't start the camera. Type the code below instead."
+          : /notfound|no camera|requested device/i.test(message)
+            ? "No camera was found on this device. Type the code below instead."
+            : /notreadable|in use|could not start/i.test(message)
+              ? "The camera is being used by another app. Close it and try again, or type the code below."
+              : "Couldn't start the camera. Type the code below instead."
       );
     }
   }, [submit]);

@@ -205,6 +205,17 @@ function placeholderStart(): string {
   return date.toISOString();
 }
 
+// Autosave runs while the organizer is still typing, so the end can be
+// missing its start or sit before it. Save no end until the pair is valid
+// (the schedule step shows the error); sending it would break the
+// events_end_after_start check.
+function draftEndAt(values: WizardValues): string | null {
+  const start = toIso(values.startsAt);
+  const end = toIso(values.endAt);
+  if (!start || !end) return null;
+  return Date.parse(end) > Date.parse(start) ? end : null;
+}
+
 function eventFields(values: WizardValues) {
   return {
     title: values.title.trim(),
@@ -214,7 +225,7 @@ function eventFields(values: WizardValues) {
     max_tickets_per_user: Number(values.maxTicketsPerUser) || 4,
     image_path: values.imagePath,
     ...(values.startsAt ? { starts_at: toIso(values.startsAt)! } : {}),
-    end_at: toIso(values.endAt),
+    end_at: draftEndAt(values),
     ...(values.location.trim() ? { location: values.location.trim() } : {}),
   };
 }
@@ -329,7 +340,7 @@ export async function updateLiveEvent(eventId: string, original: WizardValues, e
   if (typeChanges.length > 0) changes.ticket_types = typeChanges;
 
   const { data, error } = await supabase.rpc("update_published_event", { p_event_id: eventId, p_changes: changes });
-  if (error) return { ok: false, errorMessage: error.message };
+  if (error) return { ok: false, errorMessage: friendlyError(error.message) };
   const result = data as { requires_review?: boolean } | null;
   return { ok: true, requiresReview: Boolean(result?.requires_review) };
 }

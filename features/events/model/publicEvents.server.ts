@@ -211,6 +211,20 @@ export const getPublicTicketTypes = cache(async (eventId: string): Promise<Publi
   }));
 });
 
+// Tickets the viewer already holds for this event (active or used), which
+// count toward the per-person limit in book_ticket.
+export async function getMyTicketCount(eventId: string, userId: string): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("tickets")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .eq("user_id", userId)
+    .in("status", ["active", "used"]);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 // Approved (or suspended, so existing events keep their host) organizers only.
 export const getPublicOrganizer = cache(async (organizerId: string): Promise<PublicOrganizer | null> => {
   if (!UUID.test(organizerId)) return null;
