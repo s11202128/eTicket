@@ -10,6 +10,19 @@ import {
 } from "@/features/manager/model/manager.repository";
 
 const PROGRESS_REFRESH_MS = 20_000;
+const MODE_STORAGE_KEY = "eticket.check-in-mode";
+
+export type CheckInMode = "scan" | "sell";
+
+// The last mode used on this device, so door staff selling all night stay
+// there. Falls back to Scan on the server or when storage is blocked.
+function readSavedMode(): CheckInMode {
+  try {
+    return window.localStorage.getItem(MODE_STORAGE_KEY) === "sell" ? "sell" : "scan";
+  } catch {
+    return "scan";
+  }
+}
 
 // Short beep: high for valid, low double buzz for a problem.
 function playTone(valid: boolean) {
@@ -43,6 +56,7 @@ export function useManagerCheckIn(initialEventId: string | null) {
   const events = useAsyncData(listCheckInEvents, "check-in-events");
   const [chosenId, setChosenId] = useState<string | null>(initialEventId);
   const [progress, setProgress] = useState<CheckInProgress | null>(null);
+  const [mode, setMode] = useState<CheckInMode>(readSavedMode);
   const [soundOn, setSoundOn] = useState(true);
   const soundRef = useRef(soundOn);
   useEffect(() => {
@@ -100,6 +114,20 @@ export function useManagerCheckIn(initialEventId: string | null) {
     window.history.replaceState(null, "", url);
   };
 
+  // Selling needs no camera, so it's switched off when leaving Scan.
+  const chooseMode = (next: CheckInMode) => {
+    if (next === "sell") {
+      void scanner.stopCamera();
+      scanner.clearDisplay();
+    }
+    setMode(next);
+    try {
+      window.localStorage.setItem(MODE_STORAGE_KEY, next);
+    } catch {
+      // Remembering the mode is a nice-to-have.
+    }
+  };
+
   return {
     events: list,
     eventsLoading: events.isLoading,
@@ -108,6 +136,9 @@ export function useManagerCheckIn(initialEventId: string | null) {
     event,
     chooseEvent,
     progress: progress && eventId ? progress : null,
+    refreshProgress,
+    mode,
+    chooseMode,
     soundOn,
     toggleSound: () => setSoundOn((value) => !value),
     scanner,

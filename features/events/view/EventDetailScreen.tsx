@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/format";
 import { REGION_LABELS } from "@/lib/regions";
 import type { PublicEvent, PublicOrganizer } from "@/features/events/model/events.types";
 import { typeAvailability, type PublicTicketType } from "@/features/events/model/ticketAvailability";
+import type { PublicAddon } from "@/features/events/model/addonAvailability";
 import { AvailabilityBadge, canOptimize } from "@/features/events/view/EventPoster";
 import { TicketSelector } from "@/features/events/view/TicketSelector";
 import { DEFAULT_PAYMENT_SETTINGS, type PaymentSettings } from "@/features/payments/model/payments.types";
@@ -15,6 +16,8 @@ import { DEFAULT_PAYMENT_SETTINGS, type PaymentSettings } from "@/features/payme
 type EventDetailScreenProps = {
   event: PublicEvent;
   ticketTypes: PublicTicketType[];
+  // Extras sold with tickets (parking, merch, ...).
+  addons?: PublicAddon[];
   // The organizer hosting the event (null for platform events).
   host: PublicOrganizer | null;
   // Service fee and test/live mode for the booking total.
@@ -35,6 +38,7 @@ function unavailableReason(event: PublicEvent): string | null {
 export function EventDetailScreen({
   event,
   ticketTypes,
+  addons = [],
   host,
   payment = DEFAULT_PAYMENT_SETTINGS,
   preview = false,
@@ -150,6 +154,7 @@ export function EventDetailScreen({
           <div className="border-t border-border pt-5">
             <TicketSelector
               types={ticketTypes}
+              addons={addons}
               perPerson={event.maxTicketsPerUser}
               eventId={event.id}
               slug={event.slug}

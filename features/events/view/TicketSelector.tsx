@@ -4,14 +4,16 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocalDateTime } from "@/components/ui/LocalDateTime";
-import { Field, Select } from "@/components/ui/Field";
+import { Field, Input, Select } from "@/components/ui/Field";
 import { formatPrice } from "@/lib/format";
 import { typeAvailability, type PublicTicketType, type TypeAvailability } from "@/features/events/model/ticketAvailability";
+import { maxAddonQuantity, type PublicAddon } from "@/features/events/model/addonAvailability";
 import { useTicketSelection } from "@/features/events/viewmodel/useTicketSelection";
 import type { PaymentSettings } from "@/features/payments/model/payments.types";
 
 type Props = {
   types: PublicTicketType[];
+  addons: PublicAddon[];
   perPerson: number;
   eventId: string;
   slug: string;
@@ -63,6 +65,7 @@ function noneAvailableLabel(availabilities: TypeAvailability[]): string {
 // Booking panel: choose a ticket type and quantity, see the total, book.
 export function TicketSelector({
   types,
+  addons,
   perPerson,
   eventId,
   slug,
@@ -72,6 +75,7 @@ export function TicketSelector({
 }: Props) {
   const vm = useTicketSelection({
     types,
+    addons,
     perPerson,
     eventId,
     slug,
@@ -139,20 +143,116 @@ export function TicketSelector({
         </div>
       ) : null}
 
+      {vm.selected && addons.length > 0 && !blocked ? (
+        <fieldset className="grid gap-2 border-t border-border pt-3">
+          <legend className="mb-1 text-sm font-semibold">Extras</legend>
+          {addons.map((addon) => {
+            const max = maxAddonQuantity(addon);
+            const count = vm.addonQuantities[addon.id] ?? 0;
+            return (
+              <div key={addon.id} className="flex items-center justify-between gap-3">
+                <div className="grid min-w-0">
+                  <span className="text-sm font-medium">
+                    {addon.name} <span className="text-muted">· {formatPrice(addon.price)}</span>
+                  </span>
+                  {addon.description ? <span className="text-xs text-muted">{addon.description}</span> : null}
+                  {max === 0 ? <span className="text-xs font-semibold text-danger">Sold out</span> : null}
+                </div>
+                <div role="group" aria-label={`${addon.name} quantity`} className="flex shrink-0 items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => vm.setAddonQuantity(addon.id, count - 1)}
+                    disabled={count <= 0}
+                    aria-label={`One fewer ${addon.name}`}
+                  >
+                    −
+                  </Button>
+                  <span aria-live="polite" className="w-6 text-center font-bold tabular-nums">
+                    {count}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => vm.setAddonQuantity(addon.id, count + 1)}
+                    disabled={count >= max}
+                    aria-label={`One more ${addon.name}`}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </fieldset>
+      ) : null}
+
+      {vm.selected && !blocked && vm.selected.price > 0 ? (
+        vm.promo ? (
+          <div className="flex items-center justify-between gap-3 rounded-md bg-success-bg px-3 py-2 text-sm">
+            <span>
+              <span className="font-mono font-semibold">{vm.promo.code}</span> applied
+            </span>
+            <button type="button" onClick={vm.removePromo} className="font-semibold text-accent-text hover:underline">
+              Remove
+            </button>
+          </div>
+        ) : (
+          <details className="group text-sm" open={Boolean(vm.promoInput || vm.promoError) || undefined}>
+            <summary className="cursor-pointer font-semibold text-accent-text">Have a promo code?</summary>
+            <form
+              className="mt-2 flex items-start gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void vm.applyPromo();
+              }}
+            >
+              <div className="grid flex-1 gap-1">
+                <Input
+                  aria-label="Promo code"
+                  value={vm.promoInput}
+                  onChange={(event) => vm.setPromoInput(event.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  className="font-mono uppercase"
+                  aria-invalid={vm.promoError ? true : undefined}
+                  aria-describedby={vm.promoError ? `promo-error-${slug}` : undefined}
+                />
+                {vm.promoError ? (
+                  <span id={`promo-error-${slug}`} role="alert" className="text-xs font-medium text-danger">
+                    {vm.promoError}
+                  </span>
+                ) : null}
+              </div>
+              <Button type="submit" variant="secondary" isLoading={vm.isCheckingPromo} disabled={!vm.promoInput.trim()}>
+                Apply
+              </Button>
+            </form>
+          </details>
+        )
+      ) : null}
+
       {vm.selected ? (
         <>
           <dl className="grid gap-1 border-t border-border pt-3">
+            {quote.subtotal !== quote.total ? (
+              <div className="flex justify-between text-sm text-muted">
+                <dt>Subtotal</dt>
+                <dd className="tabular-nums">{formatPrice(quote.subtotal)}</dd>
+              </div>
+            ) : null}
+            {quote.discount > 0 ? (
+              <div className="flex justify-between text-sm text-success">
+                <dt>Discount</dt>
+                <dd className="tabular-nums">−{formatPrice(quote.discount)}</dd>
+              </div>
+            ) : null}
             {quote.serviceFee > 0 ? (
-              <>
-                <div className="flex justify-between text-sm text-muted">
-                  <dt>Tickets</dt>
-                  <dd className="tabular-nums">{formatPrice(quote.subtotal)}</dd>
-                </div>
-                <div className="flex justify-between text-sm text-muted">
-                  <dt>Service fee ({payment.serviceFeePercent}%)</dt>
-                  <dd className="tabular-nums">{formatPrice(quote.serviceFee)}</dd>
-                </div>
-              </>
+              <div className="flex justify-between text-sm text-muted">
+                <dt>Service fee ({payment.serviceFeePercent}%)</dt>
+                <dd className="tabular-nums">{formatPrice(quote.serviceFee)}</dd>
+              </div>
             ) : null}
             <div className="flex items-baseline justify-between">
               <dt className="text-sm text-muted">Total</dt>

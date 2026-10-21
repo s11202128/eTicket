@@ -6,6 +6,7 @@ import type { HeroContentView, PublicCategory, PublicEvent } from "@/features/ev
 import { EventGrid, canOptimize } from "@/features/events/view/EventPoster";
 import { HeroSlider } from "@/features/events/view/HeroSlider";
 import { selectHeroSlides } from "@/features/events/model/heroSlides";
+import { NewsletterSignup } from "@/features/site/view/NewsletterSignup";
 import { REGION_FILTERS } from "@/lib/regions";
 
 type HomeScreenProps = {
@@ -93,6 +94,8 @@ export function HomeScreen({ hero, featured, upcoming, categories }: HomeScreenP
             <EmptyState icon="🎟" title="No upcoming events yet" description="New events are added regularly. Check back soon." />
           )}
         </section>
+
+        <NewsletterSignup />
       </div>
     </>
   );

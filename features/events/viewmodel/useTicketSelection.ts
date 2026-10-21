@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
-import { bookTicketType, countMyTicketsForEvent } from "@/features/tickets/model/tickets.repository";
+import { bookTicketType, checkPromoCode, countMyTicketsForEvent } from "@/features/tickets/model/tickets.repository";
 import { useViewer } from "@/features/auth/viewmodel/useViewer";
 import { defaultTypeId, maxQuantity, type PublicTicketType } from "@/features/events/model/ticketAvailability";
-import { quoteOrder } from "@/features/payments/model/pricing";
+import { addonLines, maxAddonQuantity, type PublicAddon } from "@/features/events/model/addonAvailability";
+import { quoteOrder, type PromoDiscount } from "@/features/payments/model/pricing";
 
 type Options = {
   types: PublicTicketType[];
+  addons: PublicAddon[];
   perPerson: number;
   eventId: string;
   slug: string;
@@ -22,7 +24,7 @@ type Options = {
 // Choose a ticket type and quantity, then book. Signed-out visitors go to
 // login and come back to this event. The page is cached for everyone, so who
 // is signed in and how many tickets they hold are looked up in the browser.
-export function useTicketSelection({ types, perPerson, eventId, slug, serviceFeePercent, preview }: Options) {
+export function useTicketSelection({ types, addons, perPerson, eventId, slug, serviceFeePercent, preview }: Options) {
   const router = useRouter();
   const toast = useToast();
   const viewerState = useViewer();
@@ -60,10 +62,52 @@ export function useTicketSelection({ types, perPerson, eventId, slug, serviceFee
   const [selectedId, setSelectedId] = useState<string | null>(() => defaultTypeId(types, now));
   const [quantity, setQuantity] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
+  // Add-on id → how many.
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<(PromoDiscount & { code: string }) | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   const selected = types.find((type) => type.id === selectedId) ?? null;
   const max = selected ? maxQuantity(selected, remaining, now) : 0;
   const safeQuantity = Math.min(Math.max(quantity, 1), Math.max(max, 1));
+
+  const setAddonQuantity = (id: string, quantity: number) => {
+    const addon = addons.find((item) => item.id === id);
+    if (!addon) return;
+    const clamped = Math.min(Math.max(quantity, 0), maxAddonQuantity(addon));
+    setAddonQuantities((current) => ({ ...current, [id]: clamped }));
+  };
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    if (!isSignedIn) {
+      setPromoError("Log in to use a promo code.");
+      return;
+    }
+    setIsCheckingPromo(true);
+    setPromoError(null);
+    try {
+      const result = await checkPromoCode(eventId, code);
+      if (result.ok) setPromo({ code: result.code, type: result.type, value: result.value });
+      else {
+        setPromo(null);
+        setPromoError(result.errorMessage);
+      }
+    } catch {
+      setPromoError("Couldn't check the code. Check your connection and try again.");
+    } finally {
+      setIsCheckingPromo(false);
+    }
+  };
+
+  const removePromo = () => {
+    setPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  };
 
   const select = (id: string) => {
     const type = types.find((item) => item.id === id);
@@ -93,7 +137,10 @@ export function useTicketSelection({ types, perPerson, eventId, slug, serviceFee
 
     setIsBooking(true);
     try {
-      const result = await bookTicketType(selected.id, safeQuantity);
+      const result = await bookTicketType(selected.id, safeQuantity, {
+        promoCode: promo?.code ?? null,
+        addons: addonLines(addonQuantities),
+      });
       if (!result.ok || !result.code) {
         toast.error(result.errorMessage ?? "Booking failed. Please try again.");
         return;
@@ -103,6 +150,8 @@ export function useTicketSelection({ types, perPerson, eventId, slug, serviceFee
         safeQuantity === 1 ? { label: "View ticket", href: `/tickets/${result.code}` } : { label: "My tickets", href: "/tickets" }
       );
       setQuantity(1);
+      setAddonQuantities({});
+      removePromo();
       setCountVersion((value) => value + 1);
       // Re-render the page so seats left update (cached pages catch up within a minute).
       router.refresh();
@@ -122,7 +171,25 @@ export function useTicketSelection({ types, perPerson, eventId, slug, serviceFee
     max,
     increment: () => setQuantity(Math.min(safeQuantity + 1, max)),
     decrement: () => setQuantity(Math.max(safeQuantity - 1, 1)),
-    quote: quoteOrder(selected?.price ?? 0, selected ? safeQuantity : 0, serviceFeePercent),
+    quote: quoteOrder({
+      unitPrice: selected?.price ?? 0,
+      quantity: selected ? safeQuantity : 0,
+      addons: addons.map((addon) => ({ price: addon.price, quantity: addonQuantities[addon.id] ?? 0 })),
+      promo,
+      serviceFeePercent,
+    }),
+    addonQuantities,
+    setAddonQuantity,
+    promoInput,
+    setPromoInput: (value: string) => {
+      setPromoInput(value);
+      setPromoError(null);
+    },
+    promo,
+    promoError,
+    isCheckingPromo,
+    applyPromo,
+    removePromo,
     remaining,
     isSignedIn,
     alreadyBooked,

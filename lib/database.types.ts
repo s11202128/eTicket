@@ -10,7 +10,9 @@
 // - list_event_attendees: holder_name, holder_email, checked_in_at can be null.
 // - get_public_organizers: every column except user_id/organization_name/status can be null.
 // - Internal functions the app can't call are omitted (write_audit,
-//   notify_user, notify_admins, refresh_event_ticket_summary, complete_past_events).
+//   notify_user, notify_admins, refresh_event_ticket_summary, complete_past_events,
+//   assert_ticket_type_available, issue_tickets, find_promo_code,
+//   set_contact_message_handled_by).
 // - Helper types at the bottom (UserRole, EventStatus, ...).
 
 export type Json =
@@ -58,6 +60,7 @@ type TicketRow = {
   code: string
   created_at: string
   event_id: string
+  holder_name: string | null
   id: string
   order_id: string | null
   status: string
@@ -68,19 +71,59 @@ type TicketRow = {
 }
 
 type OrderRow = {
+  channel: string
   created_at: string
   currency: string
+  discount: number
   event_id: string
   id: string
   paid_at: string | null
   payment_provider: string
   payment_reference: string | null
+  promo_code_id: string | null
   service_fee: number
+  sold_by: string | null
   status: string
   subtotal: number
   total: number
   updated_at: string
   user_id: string
+}
+
+type PromoCodeRow = {
+  code: string
+  created_at: string
+  discount_type: string
+  discount_value: number
+  ends_at: string | null
+  event_id: string
+  id: string
+  is_active: boolean
+  max_uses: number | null
+  starts_at: string | null
+  updated_at: string
+}
+
+type EventAddonRow = {
+  created_at: string
+  description: string | null
+  event_id: string
+  id: string
+  is_active: boolean
+  name: string
+  price: number
+  quantity: number | null
+  sort_order: number
+  updated_at: string
+}
+
+type OrderAddonRow = {
+  addon_id: string
+  created_at: string
+  id: string
+  order_id: string
+  quantity: number
+  unit_price: number
 }
 
 type PaymentSettingsRow = {
@@ -214,6 +257,72 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      event_addons: {
+        Row: EventAddonRow
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          quantity?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          quantity?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_addons_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: EventRow
         Insert: {
@@ -291,6 +400,24 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       notification_reads: {
         Row: {
           notification_id: string
@@ -350,17 +477,56 @@ export type Database = {
         }
         Relationships: []
       }
+      order_addons: {
+        Row: OrderAddonRow
+        Insert: {
+          addon_id: string
+          created_at?: string
+          id?: string
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          addon_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_addons_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "event_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_addons_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: OrderRow
         Insert: {
+          channel?: string
           created_at?: string
           currency: string
+          discount?: number
           event_id: string
           id?: string
           paid_at?: string | null
           payment_provider: string
           payment_reference?: string | null
+          promo_code_id?: string | null
           service_fee?: number
+          sold_by?: string | null
           status?: string
           subtotal: number
           total: number
@@ -368,14 +534,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          channel?: string
           created_at?: string
           currency?: string
+          discount?: number
           event_id?: string
           id?: string
           paid_at?: string | null
           payment_provider?: string
           payment_reference?: string | null
+          promo_code_id?: string | null
           service_fee?: number
+          sold_by?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -395,6 +565,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -460,6 +637,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      promo_codes: {
+        Row: PromoCodeRow
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value: number
+          ends_at?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -571,6 +786,7 @@ export type Database = {
           code?: string
           created_at?: string
           event_id: string
+          holder_name?: string | null
           id?: string
           order_id?: string | null
           status?: string
@@ -586,6 +802,7 @@ export type Database = {
           code?: string
           created_at?: string
           event_id?: string
+          holder_name?: string | null
           id?: string
           order_id?: string | null
           status?: string
@@ -600,6 +817,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -677,11 +901,30 @@ export type Database = {
         }
       } & ReturnsOne<OrganizerProfileRow, "organizer_profiles">
       book_ticket: {
-        Args: { p_quantity?: number; p_ticket_type_id: string }
+        Args: { p_addons?: Json; p_promo_code?: string; p_quantity?: number; p_ticket_type_id: string }
         Returns: TicketRow[]
         SetofOptions: { from: "*"; to: "tickets"; isOneToOne: false; isSetofReturn: true }
       }
       can_check_in: { Args: { p_event_id: string }; Returns: boolean }
+      check_promo_code: {
+        Args: { p_code: string; p_event_id: string }
+        Returns: { code: string; discount_type: string; discount_value: number }[]
+      }
+      door_sell_tickets: {
+        Args: {
+          p_check_in?: boolean
+          p_holder_name: string
+          p_payment_method: string
+          p_quantity: number
+          p_ticket_type_id: string
+        }
+        Returns: TicketRow[]
+        SetofOptions: { from: "*"; to: "tickets"; isOneToOne: false; isSetofReturn: true }
+      }
+      get_addon_counts: {
+        Args: { p_event_ids: string[] }
+        Returns: { addon_id: string; sold: number }[]
+      }
       cancel_event: {
         Args: { p_event_id: string; p_note?: string }
         Returns: number
@@ -806,6 +1049,11 @@ export type Database = {
       } & ReturnsOne<OrganizerProfileRow, "organizer_profiles">
       slugify: { Args: { value: string }; Returns: string }
       submit_event_for_review: { Args: { p_event_id: string } } & ReturnsOne<EventRow, "events">
+      submit_contact_message: {
+        Args: { p_email: string; p_message: string; p_name: string }
+        Returns: undefined
+      }
+      subscribe_newsletter: { Args: { p_email: string }; Returns: undefined }
       unread_notification_count: { Args: never; Returns: number }
       update_organizer_profile: {
         Args: {
@@ -860,6 +1108,8 @@ export type EventRegion = "solomon_islands" | "pacific" | "international"
 export type TicketDbStatus = "active" | "used" | "cancelled"
 export type OrderStatus = "pending_payment" | "paid" | "failed" | "cancelled" | "refunded"
 export type PaymentMode = "test" | "live"
+export type DiscountType = "percent" | "amount"
+export type DoorPaymentMethod = "cash" | "card" | "mobile_money" | "complimentary"
 export type CheckInResult =
   | "valid"
   | "already_used"

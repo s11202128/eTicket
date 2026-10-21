@@ -14,7 +14,9 @@ export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = { mode: "test", service
 // What the buyer pays for one booking. book_ticket works this out the same way
 // and stores it on the order; the app only shows it.
 export type OrderQuote = {
+  // Tickets plus add-ons, before the discount.
   subtotal: number;
+  discount: number;
   serviceFee: number;
   total: number;
 };

@@ -17,6 +17,7 @@ import type {
   PublicOrganizer,
 } from "@/features/events/model/events.types";
 import type { PublicTicketType } from "@/features/events/model/ticketAvailability";
+import type { PublicAddon } from "@/features/events/model/addonAvailability";
 
 // Server-side reads for public pages. They run as the anonymous visitor (no
 // cookies), so row-level security limits them to published and completed
@@ -224,6 +225,32 @@ export const getPublicTicketTypes = cache(async (eventId: string): Promise<Publi
     sold: sold.get(row.id) ?? 0,
     salesStart: row.sales_start,
     salesEnd: row.sales_end,
+  }));
+});
+
+// Active add-ons in display order with how many have sold, for the booking panel.
+export const getPublicAddons = cache(async (eventId: string): Promise<PublicAddon[]> => {
+  const supabase = createSupabasePublicClient();
+  const [{ data, error }, { data: counts, error: countError }] = await Promise.all([
+    supabase
+      .from("event_addons")
+      .select("id, name, description, price, quantity")
+      .eq("event_id", eventId)
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name"),
+    supabase.rpc("get_addon_counts", { p_event_ids: [eventId] }),
+  ]);
+  // Before the add-ons migration runs the table is missing: show none.
+  if (error || countError) return [];
+  const sold = new Map(counts.map((row) => [row.addon_id, row.sold]));
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    price: Number(row.price),
+    quantity: row.quantity,
+    sold: sold.get(row.id) ?? 0,
   }));
 });
 
