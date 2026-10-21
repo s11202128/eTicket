@@ -14,13 +14,14 @@ This project now uses MVVM for feature modules.
 
 | Feature | Routes | Notes |
 | --- | --- | --- |
-| `site` | — | Public layout pieces: header (nav, bell, account menu), announcement bar, notices, footer. Layout: `app/(public)/layout.tsx` |
-| `events` | `/`, `/events`, `/events/[slug]` | Server-rendered browsing (`publicEvents.server.ts`); booking via `BookButton` |
+| `site` | `/faq`, `/contact` | Public layout pieces: header (nav, bell, account menu), announcement bar, notices, footer; newsletter sign-up (home page), contact form, FAQ. Layout: `app/(public)/layout.tsx` |
+| `events` | `/`, `/events`, `/events/[slug]` | Server-rendered browsing (`publicEvents.server.ts`); booking via `TicketSelector` |
+| `payments` | — | Order pricing (`pricing.ts`), payment settings (`payments.server.ts`) and the provider interface (`providers.ts`, none connected yet: test mode) |
 | `tickets` | `/tickets`, `/tickets/[code]` | My tickets (Upcoming/Past), ticket page with QR, PNG/PDF, share, calendar, cancel |
 | `notifications` | — | Bell dropdown: unread count, list, mark read / mark all read |
 | `profile` | `/profile` | Name and avatar (uploaded to the `avatars` bucket) |
 | `auth` | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/logout`, `/auth/callback` | Email + password. Email links land on `/auth/callback`. `?next=` returns users to where they were |
-| `admin` | `/admin/*` | Admin dashboard, admins only (including check-in). Guarded by `proxy.ts` and `app/admin/layout.tsx` |
+| `admin` | `/admin/*` | Admin dashboard, admins only (including check-in). Guarded by `proxy.ts` and `app/admin/layout.tsx`. Contact messages inbox at `/admin/messages`, newsletter subscribers (search, remove, CSV) at `/admin/subscribers`; promo codes and add-ons on the event editor |
 
 Redirects kept for old links: `/dashboard` → `/tickets`, `/check-in` → `/admin/check-in`, `/events/<id>` → `/events/<slug>`.
 
@@ -52,7 +53,29 @@ with row-level security and functions, so the client is never trusted:
   events; admins manage all. Events with tickets can't be deleted.
 - `tickets`: users read their own; admins read all. No direct writes:
   `book_ticket`, `cancel_my_ticket`, `admin_cancel_ticket`, `check_in_ticket`.
+- `orders`: one per booking (subtotal, service fee, total, provider, status);
+  buyers, the event's organizer and admins read. Created only by `book_ticket`.
+- `payment_settings`: one row, public read, changed in the dashboard. `mode`
+  'test' confirms paid orders without charging; 'live' refuses them until a
+  payment provider is connected.
+- `promo_codes`: per event, percent or fixed amount off the tickets; only the
+  organizer and admins read or edit them; buyers check one with
+  `check_promo_code`, and `book_ticket` applies it.
+- `event_addons` (+ `order_addons`): extras sold with tickets, optional stock;
+  public read for visible events, organizer/admin write; sold counts via
+  `get_addon_counts`.
+- Door sales: `door_sell_tickets` (organizer, door staff, admins) records a
+  cash/card/mobile money/complimentary sale as a `door` order; its tickets
+  carry the buyer's name (`tickets.holder_name`) and are hidden from the
+  seller's own tickets.
+- When every ticket in an order is cancelled, a trigger cancels the order, so
+  its add-ons and promo code use count as available again.
 - `categories`, `site_content`: public read, admin write.
+- `newsletter_subscribers`: admins read and delete; added only by
+  `subscribe_newsletter` (anyone; subscribing twice is silently fine).
+- `contact_messages`: admins read and mark handled (only `handled_at`;
+  `handled_by` set by trigger); sent only by `submit_contact_message`
+  (anyone; 3 per email per hour; admins notified).
 - `notifications` (+ `notification_reads` for broadcasts): read via
   `list_my_notifications` / `unread_notification_count`; admins send.
 - Admin functions: `admin_stats`, `admin_events_near_capacity`,

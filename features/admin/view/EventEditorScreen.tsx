@@ -15,6 +15,8 @@ import { siteConfig } from "@/lib/siteConfig";
 import { ErrorState, PageHeader } from "@/features/admin/view/AdminUi";
 import { EventStatusBadge } from "@/features/admin/view/StatusBadges";
 import { useEventEditor } from "@/features/admin/viewmodel/useEventEditor";
+import { EventAddonsCard } from "@/features/manager/view/EventAddonsCard";
+import { PromoCodesCard } from "@/features/manager/view/PromoCodesCard";
 
 function safeDate(value: string): string | null {
   const date = new Date(value);
@@ -256,6 +258,23 @@ export default function EventEditorScreen() {
           </section>
         </aside>
       </form>
+
+      {/* Outside the form: the cards have their own forms. Like the
+          organizer page, they're hidden once the event is over or cancelled. */}
+      {vm.mode === "edit" && params.id && vm.currentStatus !== "cancelled" && vm.currentStatus !== "completed" ? (
+        <section aria-labelledby="event-extras-heading" className="grid gap-4">
+          <div>
+            <h2 id="event-extras-heading" className="text-lg font-extrabold tracking-tight">
+              Promo codes &amp; extras
+            </h2>
+            <p className="mt-1 text-sm text-muted">Saved straight away, separately from the form above.</p>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <PromoCodesCard eventId={params.id} />
+            <EventAddonsCard eventId={params.id} />
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

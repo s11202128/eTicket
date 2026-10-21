@@ -24,6 +24,8 @@ const NAV: NavItem[] = [
   { href: "/admin/content", label: "Content", icon: "✎" },
   { href: "/admin/categories", label: "Categories", icon: "🏷" },
   { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
+  { href: "/admin/messages", label: "Messages", icon: "✉" },
+  { href: "/admin/subscribers", label: "Subscribers", icon: "📮" },
   { href: "/admin/audit", label: "Audit log", icon: "📜" },
 ];
 

@@ -5,12 +5,19 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SkeletonRows } from "@/components/ui/Skeleton";
+import { Tabs } from "@/components/ui/Tabs";
 import { cn } from "@/lib/cn";
 import { formatShortDateTime } from "@/lib/format";
 import { ErrorState } from "@/features/admin/view/AdminUi";
 import { SCANNER_ELEMENT_ID } from "@/features/admin/viewmodel/useCheckInScanner";
 import { CheckInResultPanel } from "@/features/tickets/view/CheckInResultPanel";
-import { useManagerCheckIn } from "@/features/manager/viewmodel/useManagerCheckIn";
+import { DoorSalePanel } from "@/features/manager/view/DoorSalePanel";
+import { useManagerCheckIn, type CheckInMode } from "@/features/manager/viewmodel/useManagerCheckIn";
+
+const MODE_TABS: { id: CheckInMode; label: string }[] = [
+  { id: "scan", label: "Scan tickets" },
+  { id: "sell", label: "Sell at door" },
+];
 
 export default function ManagerCheckInScreen({ initialEventId }: { initialEventId: string | null }) {
   const vm = useManagerCheckIn(initialEventId);
@@ -80,56 +87,82 @@ export default function ManagerCheckInScreen({ initialEventId }: { initialEventI
             </span>
           </div>
 
-          {scanner.display ? <CheckInResultPanel display={scanner.display} onDismiss={scanner.clearDisplay} /> : null}
-          {scanner.error ? (
-            <p role="alert" className="rounded-md border border-danger/40 bg-danger-bg p-3 text-sm font-semibold text-danger">
-              {scanner.error}
-            </p>
-          ) : null}
+          <Tabs tabs={MODE_TABS} value={vm.mode} onChange={vm.chooseMode} label="Check-in mode" idPrefix="check-in-mode" />
 
-          <section aria-label="Camera scanner" className="grid gap-3 rounded-lg border border-border bg-surface p-3">
-            <div id={SCANNER_ELEMENT_ID} className={cn("overflow-hidden rounded-md bg-black", cameraOn ? "min-h-72" : "hidden")} />
-            {scanner.cameraError ? (
-              <p role="alert" className="text-sm font-medium text-danger">
-                {scanner.cameraError}
+          {/* Both panels stay mounted (hidden) so the scanner element and the
+              sale in progress survive switching. */}
+          <div
+            id="check-in-mode-panel-scan"
+            role="tabpanel"
+            aria-labelledby="check-in-mode-tab-scan"
+            hidden={vm.mode !== "scan"}
+            className="grid gap-4"
+          >
+            {scanner.display ? <CheckInResultPanel display={scanner.display} onDismiss={scanner.clearDisplay} /> : null}
+            {scanner.error ? (
+              <p role="alert" className="rounded-md border border-danger/40 bg-danger-bg p-3 text-sm font-semibold text-danger">
+                {scanner.error}
               </p>
             ) : null}
-            {cameraOn ? (
-              <Button variant="secondary" size="lg" onClick={() => void scanner.stopCamera()}>
-                Stop camera
-              </Button>
-            ) : (
-              <Button size="lg" className="h-16 text-lg" onClick={() => void scanner.startCamera()} isLoading={scanner.cameraState === "starting"}>
-                📷 Start scanning
-              </Button>
-            )}
-          </section>
 
-          <form
-            className="grid gap-3 rounded-lg border border-border bg-surface p-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void scanner.submitManual();
-            }}
-          >
-            <Field label="Or type the ticket code" hint="Works with or without the ETICKET- prefix.">
-              {(props) => (
-                <Input
-                  {...props}
-                  value={scanner.code}
-                  onChange={(event) => scanner.setCode(event.target.value)}
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  spellCheck={false}
-                  className="h-14 font-mono text-xl tracking-widest uppercase"
-                  placeholder="ABC123DEF456"
-                />
+            <section aria-label="Camera scanner" className="grid gap-3 rounded-lg border border-border bg-surface p-3">
+              <div id={SCANNER_ELEMENT_ID} className={cn("overflow-hidden rounded-md bg-black", cameraOn ? "min-h-72" : "hidden")} />
+              {scanner.cameraError ? (
+                <p role="alert" className="text-sm font-medium text-danger">
+                  {scanner.cameraError}
+                </p>
+              ) : null}
+              {cameraOn ? (
+                <Button variant="secondary" size="lg" onClick={() => void scanner.stopCamera()}>
+                  Stop camera
+                </Button>
+              ) : (
+                <Button size="lg" className="h-16 text-lg" onClick={() => void scanner.startCamera()} isLoading={scanner.cameraState === "starting"}>
+                  📷 Start scanning
+                </Button>
               )}
-            </Field>
-            <Button type="submit" size="lg" isLoading={scanner.isChecking} disabled={!scanner.code.trim()}>
-              Check in
-            </Button>
-          </form>
+            </section>
+
+            <form
+              className="grid gap-3 rounded-lg border border-border bg-surface p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void scanner.submitManual();
+              }}
+            >
+              <Field label="Or type the ticket code" hint="Works with or without the ETICKET- prefix.">
+                {(props) => (
+                  <Input
+                    {...props}
+                    value={scanner.code}
+                    onChange={(event) => scanner.setCode(event.target.value)}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    className="h-14 font-mono text-xl tracking-widest uppercase"
+                    placeholder="ABC123DEF456"
+                  />
+                )}
+              </Field>
+              <Button type="submit" size="lg" isLoading={scanner.isChecking} disabled={!scanner.code.trim()}>
+                Check in
+              </Button>
+            </form>
+          </div>
+
+          <div
+            id="check-in-mode-panel-sell"
+            role="tabpanel"
+            aria-labelledby="check-in-mode-tab-sell"
+            hidden={vm.mode !== "sell"}
+          >
+            <DoorSalePanel
+              key={vm.eventId}
+              eventId={vm.eventId}
+              startsAt={vm.event?.startsAt ?? null}
+              onSold={() => void vm.refreshProgress()}
+            />
+          </div>
         </>
       ) : null}
     </div>

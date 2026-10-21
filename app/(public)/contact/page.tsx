@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { siteConfig } from "@/lib/siteConfig";
+import { ContactForm } from "@/features/site/view/ContactForm";
 import { InfoPage } from "@/features/site/view/InfoPage";
 import { SOCIAL_LABELS } from "@/features/site/view/SocialIcon";
 
@@ -42,10 +43,16 @@ export default function ContactPage() {
         </p>
       )}
 
+      <h2>Send us a message</h2>
+      <ContactForm />
+
       <h2>Help with a ticket</h2>
       <p>
         Include your ticket code (shown under the QR code on your ticket) so we can find your booking quickly. You can
         see all your tickets in <Link href="/tickets">My Tickets</Link>.
+      </p>
+      <p>
+        Many questions are already answered in our <Link href="/faq">FAQ</Link>.
       </p>
     </InfoPage>
   );

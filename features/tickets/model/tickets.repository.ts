@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { CheckInResult, EventStatus, TicketDbStatus } from "@/lib/database.types";
+import type { CheckInResult, DiscountType, EventStatus, TicketDbStatus } from "@/lib/database.types";
 import { eventImageSrc } from "@/lib/storage";
 import type {
   BookResult,
@@ -81,25 +81,47 @@ async function requireUserId(): Promise<string> {
   return userId;
 }
 
-export async function bookTicketType(ticketTypeId: string, quantity = 1): Promise<BookResult> {
-  // The database checks sign-in, availability, per-type capacity and the
-  // per-person limit, then creates the tickets and a confirmation notification.
+export type BookOptions = {
+  promoCode?: string | null;
+  addons?: { id: string; quantity: number }[];
+};
+
+export async function bookTicketType(ticketTypeId: string, quantity = 1, options: BookOptions = {}): Promise<BookResult> {
+  // The database checks sign-in, availability, per-type capacity, the
+  // per-person limit, the promo code and add-on stock, then creates the order,
+  // the tickets and a confirmation notification.
   const { data, error } = await supabase.rpc("book_ticket", {
     p_ticket_type_id: ticketTypeId,
     p_quantity: quantity,
+    ...(options.promoCode ? { p_promo_code: options.promoCode } : {}),
+    ...(options.addons?.length ? { p_addons: options.addons } : {}),
   });
   if (error) return { ok: false, errorMessage: error.message };
   return { ok: true, code: data[0]?.code };
 }
 
+export type PromoCheck = { ok: true; code: string; type: DiscountType; value: number } | { ok: false; errorMessage: string };
+
+// Confirm a promo code before booking so the panel can show the discount.
+// book_ticket checks it again.
+export async function checkPromoCode(eventId: string, code: string): Promise<PromoCheck> {
+  const { data, error } = await supabase.rpc("check_promo_code", { p_event_id: eventId, p_code: code.trim() });
+  if (error) return { ok: false, errorMessage: error.message };
+  const [row] = data;
+  if (!row) return { ok: false, errorMessage: "That promo code isn't valid for this event." };
+  return { ok: true, code: row.code, type: row.discount_type as DiscountType, value: Number(row.discount_value) };
+}
+
 // Tickets the user holds for one event (active or used); book_ticket counts
-// these toward the per-person limit.
+// these toward the per-person limit. Door-sale tickets (holder_name set) were
+// sold by this user for someone else, so they don't count.
 export async function countMyTicketsForEvent(eventId: string, userId: string): Promise<number> {
   const { count, error } = await supabase
     .from("tickets")
     .select("id", { count: "exact", head: true })
     .eq("event_id", eventId)
     .eq("user_id", userId)
+    .is("holder_name", null)
     .in("status", ["active", "used"]);
   if (error) throw new Error(error.message);
   return count ?? 0;
@@ -140,13 +162,15 @@ function checkInErrorMessage(message: string): string {
   return message;
 }
 
-// Always filtered by user: admins can read every ticket.
+// Always filtered by user: admins can read every ticket. Door-sale tickets
+// belong to the buyer at the gate, not the staff member who sold them.
 export async function listMyTickets(): Promise<TicketView[]> {
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from("tickets")
     .select(TICKET_SELECT)
     .eq("user_id", userId)
+    .is("holder_name", null)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   const now = Date.now();

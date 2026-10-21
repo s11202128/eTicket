@@ -310,6 +310,97 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Orders and payment settings
+-- ---------------------------------------------------------------------------
+
+create or replace function pg_temp.test_13_free_booking_creates_paid_order() returns setof text language plpgsql as $$
+declare
+  v_booking text;
+  v_ticket public.tickets%rowtype;
+  v_order public.orders%rowtype;
+begin
+  perform pg_temp.fixtures();
+  v_booking := pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today'));
+  select * into v_ticket from public.tickets where code = pg_temp.code_of(v_booking);
+  select * into v_order from public.orders where id = v_ticket.order_id;
+  return next is(v_order.status, 'paid', 'a free booking is paid at once');
+  return next is(v_order.payment_provider, 'free', 'free orders need no provider');
+  return next is(v_order.total, 0.00::numeric, 'free orders cost nothing');
+  return next is(v_ticket.unit_price, 0.00::numeric, 'the ticket records the price paid');
+end;
+$$;
+
+create or replace function pg_temp.test_14_test_mode_confirms_paid_orders_with_fee() returns setof text language plpgsql as $$
+declare
+  v_type uuid;
+  v_order public.orders%rowtype;
+begin
+  perform pg_temp.fixtures();
+  update public.ticket_types set price = 25 where event_id = pg_temp.eid('today') returning id into v_type;
+  update public.payment_settings set mode = 'test', service_fee_percent = 4 where id;
+
+  perform pg_temp.act_as(pg_temp.uid('alice'));
+  perform public.book_ticket(v_type, 2);
+  execute 'reset role';
+
+  select * into v_order from public.orders where user_id = pg_temp.uid('alice');
+  return next is(v_order.payment_provider, 'test', 'test mode confirms without a provider');
+  return next is(v_order.status, 'paid', 'the test order is paid');
+  return next is(v_order.subtotal, 50.00::numeric, 'subtotal is price × quantity');
+  return next is(v_order.service_fee, 2.00::numeric, 'the 4% service fee is added');
+  return next is(v_order.total, 52.00::numeric, 'total is subtotal plus fee');
+  return next is(v_order.currency, 'SBD', 'orders use the configured currency');
+  return next is((select count(*)::int from public.tickets where order_id = v_order.id), 2,
+    'both tickets belong to the order');
+end;
+$$;
+
+create or replace function pg_temp.test_15_live_mode_refuses_paid_orders_without_provider() returns setof text language plpgsql as $$
+begin
+  perform pg_temp.fixtures();
+  update public.payment_settings set mode = 'live' where id;
+  update public.ticket_types set price = 25 where event_id = pg_temp.eid('today');
+
+  return next is(pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today')),
+    'Online payment isn''t available yet. Please try again later.', 'paid tickets need a provider in live mode');
+  return next is((select count(*)::int from public.orders where user_id = pg_temp.uid('alice')), 0,
+    'a refused booking leaves no order behind');
+  return next matches(pg_temp.try_book(pg_temp.uid('bob'), pg_temp.eid('small')), '^ok:',
+    'free tickets still book in live mode');
+end;
+$$;
+
+create or replace function pg_temp.test_16_orders_are_private_and_read_only() returns setof text language plpgsql as $$
+declare
+  v_result text := 'allowed';
+begin
+  perform pg_temp.fixtures();
+  perform pg_temp.try_book(pg_temp.uid('alice'), pg_temp.eid('today'));
+
+  perform pg_temp.act_as(pg_temp.uid('bob'));
+  return next is((select count(*)::int from public.orders), 0, 'other people''s orders are hidden');
+  begin
+    update public.payment_settings set mode = 'live';
+  exception when insufficient_privilege then
+    v_result := 'denied';
+  end;
+  execute 'reset role';
+  return next is(v_result, 'denied', 'attendees cannot change payment settings');
+
+  perform pg_temp.act_as(pg_temp.uid('alice'));
+  return next is((select count(*)::int from public.orders), 1, 'buyers see their own order');
+  v_result := 'allowed';
+  begin
+    update public.orders set total = 0;
+  exception when insufficient_privilege then
+    v_result := 'denied';
+  end;
+  execute 'reset role';
+  return next is(v_result, 'denied', 'buyers cannot change their order');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Run everything (each test is rolled back afterwards).
 -- ---------------------------------------------------------------------------
 select * from runtests(pg_my_temp_schema()::regnamespace::name, '^test_');

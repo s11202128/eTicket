@@ -12,6 +12,7 @@ const SERVICES = [
   { href: "/events", label: "Browse Events" },
   { href: "/tickets", label: "My Tickets" },
   { href: "/about", label: `About ${siteConfig.name}` },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact Us" },
 ];
 

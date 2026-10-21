@@ -13,6 +13,8 @@ import { formatPrice } from "@/lib/format";
 import { ErrorState, PageHeader, StatCard } from "@/features/admin/view/AdminUi";
 import { EventStatusBadge, TicketStatusBadge } from "@/features/admin/view/StatusBadges";
 import { editMode, eventHasEnded } from "@/features/manager/model/eventTabs";
+import { EventAddonsCard } from "@/features/manager/view/EventAddonsCard";
+import { PromoCodesCard } from "@/features/manager/view/PromoCodesCard";
 import { SalesChart } from "@/features/manager/view/SalesChart";
 import { useManagerEvent, type ManagerEventViewModel } from "@/features/manager/viewmodel/useManagerEvent";
 
@@ -97,6 +99,14 @@ export default function ManagerEventScreen({ eventId }: { eventId: string }) {
           </div>
         </Card>
       </div>
+
+      {/* Promo codes and add-ons can change while the event is live. */}
+      {meta.status !== "cancelled" && meta.status !== "completed" ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <PromoCodesCard eventId={meta.id} />
+          <EventAddonsCard eventId={meta.id} />
+        </div>
+      ) : null}
 
       <Attendees vm={vm} />
 

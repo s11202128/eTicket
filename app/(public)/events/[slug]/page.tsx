@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { excerpt, formatInSiteZone, siteUrl } from "@/lib/site";
 import { siteConfig } from "@/lib/siteConfig";
-import { getPublicEvent, getPublicOrganizer, getPublicTicketTypes } from "@/features/events/model/publicEvents.server";
+import {
+  getPublicAddons,
+  getPublicEvent,
+  getPublicOrganizer,
+  getPublicTicketTypes,
+} from "@/features/events/model/publicEvents.server";
 import type { PublicEvent } from "@/features/events/model/events.types";
 import { EventDetailScreen } from "@/features/events/view/EventDetailScreen";
+import { getPaymentSettings } from "@/features/payments/model/payments.server";
 
 type Params = Promise<{ slug: string }>;
 
@@ -74,9 +80,11 @@ export default async function EventDetailPage({ params }: { params: Params }) {
   // Old links used the event id; send them to the slug URL.
   if (event.slug !== slug) permanentRedirect(`/events/${event.slug}`);
 
-  const [ticketTypes, host] = await Promise.all([
+  const [ticketTypes, addons, host, payment] = await Promise.all([
     getPublicTicketTypes(event.id),
+    getPublicAddons(event.id),
     event.organizerId ? getPublicOrganizer(event.organizerId) : Promise.resolve(null),
+    getPaymentSettings(),
   ]);
 
   return (
@@ -85,7 +93,9 @@ export default async function EventDetailPage({ params }: { params: Params }) {
       <EventDetailScreen
         event={event}
         ticketTypes={ticketTypes}
+        addons={addons}
         host={host}
+        payment={payment}
       />
     </>
   );
