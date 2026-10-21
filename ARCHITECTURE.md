@@ -15,7 +15,8 @@ This project now uses MVVM for feature modules.
 | Feature | Routes | Notes |
 | --- | --- | --- |
 | `site` | — | Public layout pieces: header (nav, bell, account menu), announcement bar, notices, footer. Layout: `app/(public)/layout.tsx` |
-| `events` | `/`, `/events`, `/events/[slug]` | Server-rendered browsing (`publicEvents.server.ts`); booking via `BookButton` |
+| `events` | `/`, `/events`, `/events/[slug]` | Server-rendered browsing (`publicEvents.server.ts`); booking via `TicketSelector` |
+| `payments` | — | Order pricing (`pricing.ts`), payment settings (`payments.server.ts`) and the provider interface (`providers.ts`, none connected yet: test mode) |
 | `tickets` | `/tickets`, `/tickets/[code]` | My tickets (Upcoming/Past), ticket page with QR, PNG/PDF, share, calendar, cancel |
 | `notifications` | — | Bell dropdown: unread count, list, mark read / mark all read |
 | `profile` | `/profile` | Name and avatar (uploaded to the `avatars` bucket) |
@@ -52,6 +53,11 @@ with row-level security and functions, so the client is never trusted:
   events; admins manage all. Events with tickets can't be deleted.
 - `tickets`: users read their own; admins read all. No direct writes:
   `book_ticket`, `cancel_my_ticket`, `admin_cancel_ticket`, `check_in_ticket`.
+- `orders`: one per booking (subtotal, service fee, total, provider, status);
+  buyers, the event's organizer and admins read. Created only by `book_ticket`.
+- `payment_settings`: one row, public read, changed in the dashboard. `mode`
+  'test' confirms paid orders without charging; 'live' refuses them until a
+  payment provider is connected.
 - `categories`, `site_content`: public read, admin write.
 - `notifications` (+ `notification_reads` for broadcasts): read via
   `list_my_notifications` / `unread_notification_count`; admins send.

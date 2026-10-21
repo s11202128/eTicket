@@ -10,12 +10,15 @@ import type { PublicEvent, PublicOrganizer } from "@/features/events/model/event
 import { typeAvailability, type PublicTicketType } from "@/features/events/model/ticketAvailability";
 import { AvailabilityBadge, canOptimize } from "@/features/events/view/EventPoster";
 import { TicketSelector } from "@/features/events/view/TicketSelector";
+import { DEFAULT_PAYMENT_SETTINGS, type PaymentSettings } from "@/features/payments/model/payments.types";
 
 type EventDetailScreenProps = {
   event: PublicEvent;
   ticketTypes: PublicTicketType[];
   // The organizer hosting the event (null for platform events).
   host: PublicOrganizer | null;
+  // Service fee and test/live mode for the booking total.
+  payment?: PaymentSettings;
   // Organizer preview: same page, booking disabled.
   preview?: boolean;
 };
@@ -33,6 +36,7 @@ export function EventDetailScreen({
   event,
   ticketTypes,
   host,
+  payment = DEFAULT_PAYMENT_SETTINGS,
   preview = false,
 }: EventDetailScreenProps) {
   const seats =
@@ -150,6 +154,7 @@ export function EventDetailScreen({
               eventId={event.id}
               slug={event.slug}
               unavailableReason={unavailableReason(event)}
+              payment={payment}
               preview={preview}
             />
           </div>

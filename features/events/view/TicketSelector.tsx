@@ -8,6 +8,7 @@ import { Field, Select } from "@/components/ui/Field";
 import { formatPrice } from "@/lib/format";
 import { typeAvailability, type PublicTicketType, type TypeAvailability } from "@/features/events/model/ticketAvailability";
 import { useTicketSelection } from "@/features/events/viewmodel/useTicketSelection";
+import type { PaymentSettings } from "@/features/payments/model/payments.types";
 
 type Props = {
   types: PublicTicketType[];
@@ -16,6 +17,7 @@ type Props = {
   slug: string;
   // Event-level reason booking isn't possible (ended, cancelled, …).
   unavailableReason: string | null;
+  payment: PaymentSettings;
   // Organizer/admin preview: everything visible, booking disabled.
   preview?: boolean;
 };
@@ -65,9 +67,18 @@ export function TicketSelector({
   eventId,
   slug,
   unavailableReason,
+  payment,
   preview = false,
 }: Props) {
-  const vm = useTicketSelection({ types, perPerson, eventId, slug, preview });
+  const vm = useTicketSelection({
+    types,
+    perPerson,
+    eventId,
+    slug,
+    serviceFeePercent: payment.serviceFeePercent,
+    preview,
+  });
+  const { quote } = vm;
   const { isSignedIn, alreadyBooked } = vm;
   const limitReached = isSignedIn && vm.remaining === 0;
   const blocked = preview || Boolean(unavailableReason) || limitReached;
@@ -130,14 +141,34 @@ export function TicketSelector({
 
       {vm.selected ? (
         <>
-          <div className="flex items-baseline justify-between border-t border-border pt-3">
-            <span className="text-sm text-muted">Total</span>
-            <span className="text-2xl font-extrabold tabular-nums">{formatPrice(vm.total)}</span>
-          </div>
+          <dl className="grid gap-1 border-t border-border pt-3">
+            {quote.serviceFee > 0 ? (
+              <>
+                <div className="flex justify-between text-sm text-muted">
+                  <dt>Tickets</dt>
+                  <dd className="tabular-nums">{formatPrice(quote.subtotal)}</dd>
+                </div>
+                <div className="flex justify-between text-sm text-muted">
+                  <dt>Service fee ({payment.serviceFeePercent}%)</dt>
+                  <dd className="tabular-nums">{formatPrice(quote.serviceFee)}</dd>
+                </div>
+              </>
+            ) : null}
+            <div className="flex items-baseline justify-between">
+              <dt className="text-sm text-muted">Total</dt>
+              <dd className="text-2xl font-extrabold tabular-nums">{formatPrice(quote.total)}</dd>
+            </div>
+          </dl>
           <p className="-mt-2 text-xs text-muted">
             Up to {perPerson} tickets per person for this event.
             {isSignedIn && alreadyBooked > 0 ? ` You have ${alreadyBooked}.` : ""}
           </p>
+          {payment.mode === "test" && quote.total > 0 && !preview ? (
+            <p role="note" className="rounded-md bg-surface-2 px-3 py-2 text-xs text-muted">
+              <span className="font-semibold text-fg">Test mode:</span> online payment isn&apos;t set up yet, so
+              tickets are issued without charging you.
+            </p>
+          ) : null}
         </>
       ) : null}
 

@@ -6,12 +6,15 @@ import { useToast } from "@/components/ui/Toast";
 import { bookTicketType, countMyTicketsForEvent } from "@/features/tickets/model/tickets.repository";
 import { useViewer } from "@/features/auth/viewmodel/useViewer";
 import { defaultTypeId, maxQuantity, type PublicTicketType } from "@/features/events/model/ticketAvailability";
+import { quoteOrder } from "@/features/payments/model/pricing";
 
 type Options = {
   types: PublicTicketType[];
   perPerson: number;
   eventId: string;
   slug: string;
+  // Added to the subtotal, as book_ticket does (see payment_settings).
+  serviceFeePercent: number;
   // Organizer/admin preview: no viewer lookups.
   preview: boolean;
 };
@@ -19,7 +22,7 @@ type Options = {
 // Choose a ticket type and quantity, then book. Signed-out visitors go to
 // login and come back to this event. The page is cached for everyone, so who
 // is signed in and how many tickets they hold are looked up in the browser.
-export function useTicketSelection({ types, perPerson, eventId, slug, preview }: Options) {
+export function useTicketSelection({ types, perPerson, eventId, slug, serviceFeePercent, preview }: Options) {
   const router = useRouter();
   const toast = useToast();
   const viewerState = useViewer();
@@ -119,7 +122,7 @@ export function useTicketSelection({ types, perPerson, eventId, slug, preview }:
     max,
     increment: () => setQuantity(Math.min(safeQuantity + 1, max)),
     decrement: () => setQuantity(Math.max(safeQuantity - 1, 1)),
-    total: selected ? selected.price * safeQuantity : 0,
+    quote: quoteOrder(selected?.price ?? 0, selected ? safeQuantity : 0, serviceFeePercent),
     remaining,
     isSignedIn,
     alreadyBooked,

@@ -59,10 +59,36 @@ type TicketRow = {
   created_at: string
   event_id: string
   id: string
+  order_id: string | null
   status: string
   ticket_type_id: string
+  unit_price: number | null
   updated_at: string
   user_id: string
+}
+
+type OrderRow = {
+  created_at: string
+  currency: string
+  event_id: string
+  id: string
+  paid_at: string | null
+  payment_provider: string
+  payment_reference: string | null
+  service_fee: number
+  status: string
+  subtotal: number
+  total: number
+  updated_at: string
+  user_id: string
+}
+
+type PaymentSettingsRow = {
+  currency: string
+  id: boolean
+  mode: string
+  service_fee_percent: number
+  updated_at: string
 }
 
 type OrganizerProfileRow = {
@@ -324,6 +350,55 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: OrderRow
+        Insert: {
+          created_at?: string
+          currency: string
+          event_id: string
+          id?: string
+          paid_at?: string | null
+          payment_provider: string
+          payment_reference?: string | null
+          service_fee?: number
+          status?: string
+          subtotal: number
+          total: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          event_id?: string
+          id?: string
+          paid_at?: string | null
+          payment_provider?: string
+          payment_reference?: string | null
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizer_profiles: {
         Row: OrganizerProfileRow
         Insert: {
@@ -367,6 +442,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_settings: {
+        Row: PaymentSettingsRow
+        Insert: {
+          currency?: string
+          id?: boolean
+          mode?: string
+          service_fee_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          currency?: string
+          id?: boolean
+          mode?: string
+          service_fee_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -479,8 +572,10 @@ export type Database = {
           created_at?: string
           event_id: string
           id?: string
+          order_id?: string | null
           status?: string
           ticket_type_id: string
+          unit_price?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -492,8 +587,10 @@ export type Database = {
           created_at?: string
           event_id?: string
           id?: string
+          order_id?: string | null
           status?: string
           ticket_type_id?: string
+          unit_price?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -761,6 +858,8 @@ export type EventStatus =
   | "completed"
 export type EventRegion = "solomon_islands" | "pacific" | "international"
 export type TicketDbStatus = "active" | "used" | "cancelled"
+export type OrderStatus = "pending_payment" | "paid" | "failed" | "cancelled" | "refunded"
+export type PaymentMode = "test" | "live"
 export type CheckInResult =
   | "valid"
   | "already_used"
